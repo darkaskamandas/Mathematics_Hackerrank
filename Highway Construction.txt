@@ -1,0 +1,94 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+class Solution {
+    const long MOD = 1000000009;
+    static void Main(String[] args) {
+        int tc = int.Parse(Console.ReadLine());
+        ConstructCNKTable();
+        bnums[0] = 1;
+        bnums[1]  = modInverse(2, MOD);
+        set[0] = set[1] = true;
+        while (tc-- > 0) {
+            var tmp = Console.ReadLine().Split(' ');
+            long n = long.Parse(tmp[0]);
+            int k = int.Parse(tmp[1]);
+            Console.WriteLine(n < 3 ? 0 : bern(n - 1, k));
+        }
+    }
+
+    static long[] bnums = new long[2000];
+    static bool[] set = new bool[2000];
+    static long bern(long n, int k) {
+        long x = modInverse(k + 1, MOD);
+
+        long t0 = 0;
+        for (int j = 0; j <= k; j++) {
+            long t = C[k + 1, j];
+            t = mod(t * bn(j));
+            t = mod(t * modpow(n, k + 1 - j));
+            t0 = mod(t0 + t);
+        }
+
+        t0 = mod(MOD + mod(mod(x) * mod(t0)));
+        return mod(MOD + t0 - 1);
+    }
+
+    static long bn(int m) {
+        if (!set[m]) {
+            set[m] = true;
+
+            long t0 = 0;
+            for (int k = 0; k < m; k++) {
+                long t = C[m, k];
+                t = mod(t * mod(bn(k)));
+                t = mod(t * modInverse(m - k + 1, MOD));
+
+                t0 = mod(t0 + t);
+            }
+
+            bnums[m] = mod(MOD + mod(1 - t0));
+        }
+        return bnums[m];
+    }
+
+    static long[,] C;
+    static void ConstructCNKTable() {
+        int n = 1100;
+        C = new long[n, n];
+        C[0, 0] = 1;
+        for (int i = 1; i < n; i++) {
+            C[i, 0] = C[i, i] = 1;
+            for (int j = 1; j <= i; j++)
+                C[i, j] = (C[i - 1, j] + C[i - 1, j - 1]) % MOD;
+        }
+    }
+
+    static long modpow(long bas, long exp) {
+        bas %= MOD;
+        long result = 1;
+        while (exp > 0) {
+            if ((exp & 1) == 1) result = (result * bas) % MOD;
+            bas = (bas * bas) % MOD;
+            exp >>= 1;
+        }
+        return result;
+    }
+
+
+    public static long modInverse(long a, long m) {
+        long t, q, x0 = 0, x1 = 1;
+
+        while (a > 1) {
+            q = a / m; t = m;
+            m = a % m; a = t; t = x0;
+            x0 = x1 - q * x0; x1 = t;
+        }
+
+        x1 %= MOD;
+        if (x1 < 0) return x1 + MOD;
+        return x1;
+    }
+    static long mod(long k) { return k % MOD; }
+}

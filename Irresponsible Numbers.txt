@@ -1,0 +1,187 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+
+class Solution
+{
+    const uint mod = 1000 * 1000 * 1000 + 7;
+    const uint inv4 = (mod + 1) / 4;
+
+    static uint mul(uint a, uint b)
+    {
+        return (uint)((ulong)a * b % mod);
+    }
+
+    static uint mulp(uint a, uint b)
+    {
+        return (uint)((ulong)a * b % (mod - 1));
+    }
+
+    static uint pow(uint a, uint b)
+    {
+        uint result = 1;
+        while (b != 0)
+        {
+            if ((b & 1) != 0)
+            {
+                result = mul(result, a);
+            }
+            a = mul(a, a);
+            b >>= 1;
+        }
+        return result;
+    }
+
+    static uint irr(char digit, ulong m1, uint div10, uint div5, uint pow10m1m2, uint pow5m1m2,
+        uint pow10, uint pow5,
+        bool highDigitMet) //count numbers less than digit * 10^n, for m1 in [0 .. m1 - 1]
+    {
+        uint n10 = mul(mul(div10, pow10), mod + pow10m1m2 - 1);
+        if (highDigitMet)
+        {
+            return mul((uint)(digit - '0'), n10);
+        }
+        uint n5 = mul(mul(div5, pow5), mod + pow5m1m2 - 1);
+        uint irrn = (n10 + mod - n5 + mod - mul(n5 + mod - (uint)(m1 % mod), inv4)) % mod;
+        return mul((uint)(digit - '0'), irrn);
+    }
+
+    static uint irr(char digit, uint n10, uint n5, bool highDigitMet) //count numbers less than digit * 10^n
+    {
+        if (highDigitMet)
+        {
+            return mul((uint)(digit - '0'), n10);
+        }
+        uint irrn = (n10 + mod - n5 + mod - mul(n5 - 1, inv4)) % mod;
+        if (digit < '5')
+        {
+            return mul((uint)(digit - '0'), irrn);
+        }
+        return (mul(5, irrn) + 1 + mul((uint)(digit - '5'), n10)) % mod;
+    }
+
+    static int slowIRR(int x)
+    {
+        int carry = 1;
+        while (x != 0)
+        {
+            if (x % 10 + (x + carry) % 10 >= 10)
+            {
+                return 1;
+            }
+            carry = carry == 1 && x % 10 == 9 ? 1 : 0;
+            x /= 10;
+        }
+        return 0;
+    }
+
+    static void Main(String[] args)
+    {
+        //int N = 6;
+        //char[] value = new char[N];
+        //int w = 0;
+        //for (int i = 0; i < 1000000; i++)
+        //{
+        //    w += slowIRR(i);
+        //    if (i == 111111)
+        //    {
+        //        "re".Trim();
+        //    }
+        //    int v = i;
+        //    for (int j = N; --j >= 0;)
+        //    {
+        //        value[j] = (char)('0' + v % 10);
+        //        v /= 10;
+        //    }
+        //    long v1 = 0;
+        //    bool hi = false;
+        //    bool _all9 = true;
+        //    bool _hasEnd9 = value[N - 1] == '9';
+        //    bool _hasCarry = false;
+        //    int len = N;
+        //    while (len > 1 && value[N - len] == '0')
+        //    {
+        //        len--;
+        //    }
+
+        //    for (int j = N; --j >= N - len;)
+        //    {
+        //        if (value[j] != '9')
+        //        {
+        //            _all9 = false;
+        //        }
+        //        if ((value[j] >= '5' && value[j] <= '8') || (value[j] == '9' && !_all9))
+        //        {
+        //            _hasCarry = true;
+        //        }
+        //    }
+
+        //    for (int j = N - len; j < N; j++)
+        //    {
+        //        v1 += irr(value[j], pow(10, (uint)(N - 1 - j)), pow(5, (uint)(N - 1 - j)), hi);
+        //        hi = hi || value[j] >= '5';
+        //    }
+        //    if (_hasEnd9 && !_hasCarry)
+        //    {
+        //        v1--;
+        //    }
+        //    if (v1 != w)
+        //    {
+        //        Debugger.Break();
+        //    }
+        //}
+
+        //Console.SetIn(File.OpenText("inp.txt"));
+        string str = Console.ReadLine();
+        int spaceIndex = str.LastIndexOf(" ");
+        ulong n = ulong.Parse(str.Substring(spaceIndex + 1));
+        uint result = 0;
+        bool highDigitMet = false;
+        int end9Count = 0;
+        while (end9Count < spaceIndex && str[spaceIndex - 1 - end9Count] == '9')
+        {
+            end9Count++;
+        }
+        bool all9 = end9Count == spaceIndex;
+        bool hasCarry = Enumerable.Range(0, spaceIndex).Any(i => str[i] >= '5' && str[i] <= '8') || !all9 && n >= 2 || !all9 && n == 1 && Enumerable.Range(0, spaceIndex - end9Count).Any(i => str[i] >= '5' && str[i] <= '9');
+
+        uint inv5 = pow(5, mod - 2);
+        uint inv10 = pow(10, mod - 2);
+        if (n >= 1)
+        {
+            uint n10 = pow(10, mulp((uint)(n % (mod - 1)), (uint)spaceIndex));
+            uint n5 = pow(5, mulp((uint)(n % (mod - 1)), (uint)spaceIndex));
+            for (int i = 0; i < spaceIndex; i++)
+            {
+                n10 = mul(n10, inv10);
+                n5 = mul(n5, inv5);
+                result = (result + irr(str[i], n10, n5, highDigitMet)) % mod;
+                highDigitMet = highDigitMet || str[i] >= '5';
+            }
+        }
+
+        if (n >= 2)
+        {
+            uint div10 = pow(pow(10, (uint)spaceIndex) - 1, mod - 2);
+            uint div5 = pow(pow(5, (uint)spaceIndex) - 1, mod - 2);
+            uint pow10m1m2 = pow(10, mulp((uint)spaceIndex, (uint)((n - 1) % (mod - 1))));
+            uint pow5m1m2 = pow(5, mulp((uint)spaceIndex, (uint)((n - 1) % (mod - 1))));
+            uint pow10 = pow(10, (uint)spaceIndex);
+            uint pow5 = pow(5, (uint)spaceIndex);
+            for (int i = 0; i < spaceIndex; i++)
+            {
+                pow10 = mul(pow10, inv10);
+                pow5 = mul(pow5, inv5);
+                result = (result + irr(str[i], n - 1, div10, div5, pow10m1m2, pow5m1m2, pow10, pow5, highDigitMet)) % mod;
+            }
+        }
+
+        if (end9Count > 0 && !hasCarry)
+        {
+            result = (result + mod - 1) % mod;
+        }
+        Console.WriteLine(result);
+    }
+}

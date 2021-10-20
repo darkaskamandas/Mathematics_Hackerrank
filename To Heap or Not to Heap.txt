@@ -1,0 +1,233 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+
+namespace waterfood.CodeJam
+{
+    class Solution
+    {
+        const long _mod = 1000000007L;
+        int _n;
+        int[] _sequence;
+        // number of tree combinations when total count is i, if there is 
+        // no restriction on the value
+        long[] _idealTreeCache;
+        // number of tree combinations with limitation _sequence.
+        // key is a hash of start index and length
+        Dictionary<long, long> _actualTreeCache;
+        // let k = _dominateLength[i], then the ith number is greater or equal
+        // to the k elements on its right side
+        int[] _dominateLength;
+        // let k = _descendLength[i], then { i .. i+k } is monotonic descending
+        int[] _descendLength;
+        int _profileEntries = 0;
+        int _profileRecursiveCounter = 0;
+        int _profileRecursiveDepth = 0;
+
+        static long ModMult(long a, long b)
+        {
+            return (a * b) % _mod;
+        }
+
+        static long ModAdd(long a, long b)
+        {
+            long c = a + b;
+            if (c >= _mod)
+            {
+                c -= _mod;
+            }
+            return c;
+        }
+        
+        long IdealTreeCount(int n)
+        {
+            Assert(IsOdd(n), "GetIdealTreeCount: n is even");
+            int index = n / 2;
+            return LookupTreeCache(index);
+        }
+
+        long LookupTreeCache(int index)
+        {
+            if (_idealTreeCache[index] == 0)
+            {
+                long sum = 0;
+                // (0,i-1) + (1,i-2) + ...
+                if (IsOdd(index))
+                {
+                    int half = index / 2;
+                    sum = ModMult(LookupTreeCache(half), LookupTreeCache(half));
+                    for (int i = half - 1; i >= 0; i--)
+                    {
+                        sum += ModMult(LookupTreeCache(i) * 2, LookupTreeCache(index - i - 1));
+                    }
+                }
+                else
+                {
+                    int half = index / 2;
+                    for (int i = half - 1; i >= 0; i--)
+                    {
+                        sum += ModMult(LookupTreeCache(i) * 2, LookupTreeCache(index - i - 1));
+                    }
+                }
+                sum %= _mod;
+                _idealTreeCache[index] = sum;
+            }
+            return _idealTreeCache[index];
+        }
+
+        void Prepare()
+        {
+            for (int i = 0; i < _n; i++)
+            {
+                _dominateLength[i] = _n - i - 1;
+                for (int j = i + 1; j < _n; j++)
+                {
+                    if (_sequence[j] > _sequence[i])
+                    {
+                        _dominateLength[i] = j - i - 1;
+                        break;
+                    }
+                }
+            }
+
+            int start = 0;
+            for (int i = 1; i < _n; i++)
+            {
+                if (_sequence[i] > _sequence[i - 1])
+                {
+                    for (int j = start; j < i; j++)
+                    {
+                        _descendLength[j] = i - j - 1;
+                    }
+                    start = i;
+                }
+            }
+            for (int j = start; j < _n; j++)
+            {
+                _descendLength[j] = _n - j - 1;
+            }
+        }
+
+        Solution(int[] sequence)
+        {
+            _n = sequence.Length;
+            _sequence = sequence;
+            _dominateLength = new int[_n];
+            _descendLength = new int[_n];
+            _idealTreeCache = new long[_n / 2 + 1];
+            _idealTreeCache[0] = 1; // n=1
+            if (_n >= 3)
+            {
+                _idealTreeCache[1] = 1; // n=3
+            }
+            _actualTreeCache = new Dictionary<long, long>();
+        }
+
+        long ActualTreeCount(int start, int length)
+        {
+            Assert(IsOdd(length), "subtree length is even");
+            Assert(_dominateLength[start] >= length - 1, "Subroot is not max");
+            _profileEntries++;
+            _profileRecursiveCounter++;
+            _profileRecursiveDepth = Math.Max(_profileRecursiveDepth, _profileRecursiveCounter);
+
+            if (_descendLength[start] >= length - 1)
+            {
+                _profileRecursiveCounter--;
+                return IdealTreeCount(length);
+            }
+            else
+            {
+                long hash = (((long)start) << 32) + length;
+                if (!_actualTreeCache.ContainsKey(hash))
+                {
+                    long sum = 0;
+                    int leftStart = start + 1;
+                    int leftLengthMax = Math.Min(length - 2, _dominateLength[leftStart] + 1);
+                    if (!IsOdd(leftLengthMax))
+                    {
+                        leftLengthMax -= 1;
+                    }
+
+                    int half = (leftLengthMax + 1) / 2;
+                    int step = 1;
+                    if (IsOdd(half))
+                    {
+                        sum += ExamineLeftRight(start + 1, half, length);
+                        step = 2;
+                    }
+
+                    for (; step <= leftLengthMax - half; step += 2)
+                    {
+                        sum += ExamineLeftRight(start + 1, half - step, length);
+                        sum += ExamineLeftRight(start + 1, half + step, length);
+                    }
+                    sum %= _mod;
+                    _actualTreeCache[hash] = sum;
+                }
+                _profileRecursiveCounter--;
+                return _actualTreeCache[hash];
+            }
+        }
+
+        private long ExamineLeftRight(int leftStart, int leftLen, int rootLen)
+        {
+            int rightStart = leftStart + leftLen;
+            int rightLength = rootLen - 1 - leftLen;
+            if (_dominateLength[rightStart] >= rightLength - 1)
+            {
+                long left = ActualTreeCount(leftStart, leftLen);
+                long right = ActualTreeCount(rightStart, rightLength);
+                return ModMult(left, right);
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        long Solve()
+        {
+            Prepare();
+            Assert(_dominateLength[0] == _n - 1, "Root is not max");
+            return ActualTreeCount(0, _n);
+        }
+
+        void PrintProfile()
+        {
+            Console.WriteLine("Problem length {0}, O(n) {1}, stack {2}, dict {3}", _n, _profileEntries, _profileRecursiveDepth, _actualTreeCache.Count);
+        }
+        
+        bool IsOdd(int n)
+        {
+            return (n & 1) == 1;
+        }
+
+        static void Main(string[] args)
+        {
+            OnlineTest();
+        }
+
+        private static void OnlineTest()
+        {
+            int n = int.Parse(Console.ReadLine());
+            int[] sequence = Console.ReadLine().Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToArray();
+
+            long ans = (new Solution(sequence)).Solve();
+            Console.WriteLine(ans);
+        }
+
+        private static void Assert(bool cond, string msg)
+        {
+#if DEBUG
+            if (!cond)
+            {
+                Console.WriteLine(msg);
+                throw new InvalidOperationException();
+            }
+#endif
+        }
+    }
+}

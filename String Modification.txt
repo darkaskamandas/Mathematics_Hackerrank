@@ -1,0 +1,103 @@
+#pragma comment(linker, "/STACK:64000000")
+#include <iostream>
+#include <cstdio>
+#include <cassert>
+#include <cmath>
+#include <cstring>
+#include <ctime>
+#include <cstdlib>
+#include <vector>
+#include <stack>
+#include <queue>
+#include <deque>
+#include <string>
+#include <map>
+#include <set>
+#include <sstream>
+#include <bitset>
+#include <algorithm>
+
+#define forit(it,S) for(__typeof(S.begin()) it = (S).begin(); it != (S).end(); it++)
+#define sz(x) (int)(x).size()
+#define all(x) (x).begin(),(x).end()
+#define ll long long
+#define bit __builtin_popcountll
+#define sqr(x) (x) * (x)
+#define mp make_pair
+#define pb push_back
+
+using namespace std;
+
+typedef pair<int, int> pii;
+
+const double eps = 1e-9;
+const double pi = acos(-1.0);
+
+const int mod = (int)1e6 + 3;
+
+int cnt[26];
+int dp[27][2505];
+int f[mod],ob[mod];
+
+int binpow(int x, int y) {
+    int res = 1;
+    while(y > 0) {
+        if (y & 1) res = res * 1LL * x % mod;
+        x = x * 1LL * x % mod;
+        y >>= 1;
+    }
+    return res;
+}
+
+void add(int &x, int y) {
+    x += y;
+    if (x >= mod) x -= mod;
+}
+
+int C(int n, int m) {
+    int res = 1;
+    while(n > 0 || m > 0) {
+        int nn = n % mod; n /= mod;
+        int mm = m % mod; m /= mod;
+        if (nn < mm) {
+            res = 0;
+            break;
+        }
+        int cc = f[nn] * 1LL * ob[mm] % mod * 1LL * ob[nn - mm] % mod;
+        res = res * 1LL * cc % mod;
+    }
+    return res;
+}
+
+int main() {
+
+    f[0] = 1;
+    for (int i = 1; i < mod; i++) {
+        f[i] = f[i - 1] * 1LL * i % mod;
+    }
+    for (int i = 0; i < mod; i++) {
+        ob[i] = binpow(f[i],mod - 2);
+    }
+    int n,kk; cin >> n >> kk;    
+    string s; cin >> s;
+    for (int i = 0; i < sz(s); i++) {
+        cnt[s[i] - 'A']++;
+    }
+    dp[0][0] = 1;
+    int sum = 0;
+    for (int i = 0; i < 26; i++) {
+        for (int j = 0; j <= sum && j <= n; j++) {
+            add(dp[i + 1][j],dp[i][j]);
+            for (int k = 1; k <= cnt[i] && j + k + (k - 1) * kk <= n; k++) {
+                add(dp[i + 1][j + k],dp[i][j] * 1LL * C(n - j - k - (k - 1) * kk + k,k) % mod);
+            }
+        }
+        sum += cnt[i];
+    }
+    int res = 0;
+    for (int i = 0; i <= sum; i++) {
+        add(res,dp[26][i]);
+    }
+    cout << res << endl;
+    return 0;
+}

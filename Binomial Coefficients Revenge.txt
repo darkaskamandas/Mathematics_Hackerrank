@@ -1,0 +1,167 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Text;
+
+// (?*?*)????????????????????????????
+public class Solver
+{
+    IDictionary<long, long[]> mem;
+    long[] GetCoefs(long x, long p)
+    {
+        if (x < p)
+            return new[] { x + 1 };
+
+        if (mem.ContainsKey(x))
+            return (long[])mem[x].Clone();
+
+        long y = x / p;
+        long rem = x % p;
+
+        var yc = (long[])GetCoefs(y, p).Clone();
+        int l1 = yc.Length;
+        for (int i = 0; i < l1; i++)
+            yc[i] *= rem + 1;
+
+        if (rem == p - 1)
+            return mem[x] = yc;
+
+        var yd = (long[])GetCoefs(y - 1, p).Clone();
+        int l2 = yd.Length;
+        long mult = p - rem - 1;
+        for (int i = 0; i < l2; i++)
+            yd[i] *= mult;
+
+        int sh = 1;
+        if (l2 + sh <= l1)
+            sh += l1 - l2 - sh + 1;
+
+        int nl = Math.Max(l1, l2 + sh);
+        var ret = new long[nl];
+
+        yc.CopyTo(ret, 0);
+        for (int i = 0; i < l2; i++)
+            ret[i + sh] += yd[i];
+
+        return mem[x] = ret;
+    }
+
+    public object Solve()
+    {
+        for (int t = ReadInt(); t > 0; t--)
+        {
+            mem = new Dictionary<long, long[]>();
+            WriteArray(GetCoefs(ReadLong(), ReadLong()));
+        }
+
+        return null;
+    }
+
+
+    #region Main
+
+    protected static TextReader reader;
+    protected static TextWriter writer;
+
+    static void Main()
+    {
+#if DEBUG
+        reader = new StreamReader("..\\..\\input.txt");
+        writer = Console.Out;
+        //writer = new StreamWriter("..\\..\\output.txt");
+#else
+        reader = Console.In;
+        writer = new StreamWriter(Console.OpenStandardOutput());
+#endif
+        try
+        {
+            object result = new Solver().Solve();
+            if (result != null)
+                writer.WriteLine(result);
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            Console.WriteLine(ex);
+#else
+            throw;
+#endif
+        }
+        reader.Close();
+        writer.Close();
+    }
+
+    #endregion
+
+    #region Read/Write
+
+    private static Queue<string> currentLineTokens = new Queue<string>();
+
+    private static string[] ReadAndSplitLine()
+    {
+        return reader.ReadLine().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+    }
+
+    public static string ReadToken()
+    {
+        while (currentLineTokens.Count == 0)
+            currentLineTokens = new Queue<string>(ReadAndSplitLine());
+        return currentLineTokens.Dequeue();
+    }
+
+    public static int ReadInt()
+    {
+        return int.Parse(ReadToken());
+    }
+
+    public static long ReadLong()
+    {
+        return long.Parse(ReadToken());
+    }
+
+    public static double ReadDouble()
+    {
+        return double.Parse(ReadToken(), CultureInfo.InvariantCulture);
+    }
+
+    public static int[] ReadIntArray()
+    {
+        return ReadAndSplitLine().Select(int.Parse).ToArray();
+    }
+
+    public static long[] ReadLongArray()
+    {
+        return ReadAndSplitLine().Select(long.Parse).ToArray();
+    }
+
+    public static double[] ReadDoubleArray()
+    {
+        return ReadAndSplitLine().Select(s => double.Parse(s, CultureInfo.InvariantCulture)).ToArray();
+    }
+
+    public static int[][] ReadIntMatrix(int numberOfRows)
+    {
+        int[][] matrix = new int[numberOfRows][];
+        for (int i = 0; i < numberOfRows; i++)
+            matrix[i] = ReadIntArray();
+        return matrix;
+    }
+
+    public static string[] ReadLines(int quantity)
+    {
+        string[] lines = new string[quantity];
+        for (int i = 0; i < quantity; i++)
+            lines[i] = reader.ReadLine().Trim();
+        return lines;
+    }
+
+    public static void WriteArray<T>(IEnumerable<T> array)
+    {
+        writer.WriteLine(string.Join(" ", array));
+    }
+
+    #endregion
+}

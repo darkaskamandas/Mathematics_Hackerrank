@@ -1,0 +1,114 @@
+using System;
+using System.Collections.Generic;
+
+namespace Test
+{
+    class Program
+    {
+        struct RItem { public long Count, Sum;}
+
+        static void Main(string[] args)
+        {
+            Init(18);
+            string[] input = Console.ReadLine().Split(' ');
+            long l = Convert.ToInt64(input[0]);
+            long r = Convert.ToInt64(input[1]);
+            int k = Convert.ToInt32(input[2]);
+            long result = (Cal(k, r + 1) - Cal(k, l) + Mod) % Mod;
+            Console.WriteLine(result);
+        }
+
+        static long Mod = 1000000007;
+        static long[] P10;
+        static RItem[, ,] Dp;
+        
+        static void Init(int len)
+        {
+            P10 = new long[len + 1];
+            P10[0] = 1;
+
+            for (int i = 1; i <= len; i++)
+                P10[i] = P10[i - 1] * 10 % Mod;
+
+            Dp = new RItem[len + 1, len + 1, len * 18 + 1];
+
+            for (int i = 0; i <= len; i++)
+                for (int j = 0; j <= len; j++)
+                    for (int k = 0; k <= len * 18; k++)
+                        Dp[i, j, k] = new RItem { Count = -1 };
+        }
+
+        static long Cal(int k, long n)
+        {
+            List<int> digs = new List<int>();
+
+            while (n > 0)
+            {
+                digs.Add((int)(n % 10));
+                n /= 10;
+            }
+
+            long preDig = 0,  result = 0;
+            int pre = 0, sum = 0;
+
+            for (int i = digs.Count - 1; i >= 0; i--)
+            {
+                RItem current;
+
+                if (digs[i] > 0)
+                {
+                    current = Cal(sum, pre == 0 ? pre : pre + 1, i, k, pre == 0);
+                    result += (current.Sum + current.Count * preDig) % Mod;
+                }
+
+                for (int d = 1; d < digs[i]; d++)
+                {
+                    int nsum = sum;
+                    if (pre < k) nsum += d;
+                    if (i < k) nsum -= d;
+
+                    long mul = (preDig + P10[i] * d) % Mod;
+                    current = Cal(nsum, pre + 1, i, k, false);
+                    current.Sum = (current.Sum + current.Count * mul) % Mod;
+                    result += current.Sum;
+                }
+
+                if (pre < k) sum += digs[i];
+                if (i < k) sum -= digs[i];
+                preDig = (preDig + P10[i] * digs[i]) % Mod;
+                pre++; 
+            }
+
+            return result % Mod;
+        }
+
+        static RItem Cal(int sum, int pre, int last, int k, bool flag)
+        {
+            if (last == 0) return sum == 0 ? new RItem { Sum = 0, Count = 1 } : new RItem { Sum = 0, Count = 0 };
+            int index = sum + 162;
+
+            if (Dp[pre, last, index].Count == -1)
+            {
+                RItem result = Cal(sum, flag ? pre : pre + 1, last - 1, k, flag);
+
+                for (int dig = 1; dig < 10; dig++)
+                {
+                    int nsum = sum;
+                    if (pre < k) nsum += dig;
+                    if (last <= k) nsum -= dig;
+                    long mul = dig * P10[last - 1] % Mod;
+
+                    RItem current = Cal(nsum, pre + 1, last - 1, k, false);
+                    result.Count += current.Count;
+                    result.Sum += (current.Sum + current.Count * mul) % Mod;
+                }
+
+                result.Count %= Mod;
+                result.Sum %= Mod;
+                Dp[pre, last, index] = result;
+            }
+
+            return Dp[pre, last, index];
+        }
+    }
+}

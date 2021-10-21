@@ -1,0 +1,74 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+class Solution {
+    const int MOD = 1000000007;
+    static long pow(long a, long b)
+    {
+        long res = 1;
+        while (b > 0)
+        {
+            if ((b & 1) != 0)
+                res = (res * a) % MOD;
+            b /= 2;
+            a = (a * a) % MOD;
+        }
+        return res;
+    }
+    static long inv(long val)
+    {
+        return pow(val, MOD - 2);
+    }
+    static long[] fact = new long[1000001];
+    static long[] invfact = new long[1000001];
+    //static long[] dm = new long[1000001];  //dm[k] = sum i->0..k((-1)^k/k!)
+    static long[] dc = new long[1000001];  // dc[k] = (dm[N] * fact[N]) % MOD  // derangements count
+         
+    static long solve(int N, int K)
+    {
+        if (K == 1)
+            return 0;
+//        Console.Error.WriteLine("Solve N= {0} K = {1}", N, K);
+        long mul = (fact[N] * invfact[N - K]) % MOD;
+        long kInv = (fact[K - 1] * invfact[K]) % MOD;
+        mul = (mul * kInv) % MOD;
+        int cnt = N / K;
+        long res = (mul * dc[N - K]) % MOD; 
+//        Console.Error.WriteLine("res {0} = {1} * {2}", res, mul, dc[N - K]);
+        long cummul = kInv;
+        for (int i = 2; i <= cnt; ++i)
+        {
+            cummul = (cummul * kInv)% MOD;
+            long c2 = (fact[N] * invfact[N - K * i]) % MOD;
+            c2 = (c2 * cummul) % MOD;
+            c2 = (c2 * invfact[i])% MOD;
+            long addon = c2 * dc[N - i * K] % MOD;
+            res = (res + ((i % 2 == 0)?(MOD - addon):addon)) % MOD;
+//            Console.Error.WriteLine("{0} {1} = {2} * {3}", res, addon, c2, dc[N - i * K]);
+        }
+        return res;
+    }
+    
+    static void Main(String[] args) {
+        fact[0] = 1;
+        invfact[0] = 1;
+        dc[0] = 1;
+        long dm = 1;
+        for (int i = 1; i < fact.Length; ++i)
+        {
+            fact[i] = ((i * fact[i - 1]) % MOD);
+            invfact[i] = inv(fact[i]);
+            dm = (dm + ((i % 2 == 0)?invfact[i]:(MOD - invfact[i]))) % MOD; 
+            dc[i] = (fact[i] * dm) % MOD; // derangements count
+        }
+        int T = int.Parse(Console.ReadLine());
+        for (int cn = 1; cn <= T; ++cn)
+        {
+            string[] s = Console.ReadLine().Split(' ');
+            int N = int.Parse(s[0]);
+            int K = int.Parse(s[1]);
+            long res = solve(N, K);
+            Console.WriteLine(res);
+        }
+    }
+}

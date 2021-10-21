@@ -1,0 +1,222 @@
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <algorithm>
+#include <array>
+#include <complex>
+#include <deque>
+#include <functional>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <map>
+#include <queue>
+#include <regex>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+using namespace std;
+
+#ifdef MYDEBUG
+const int dbg = MYDEBUG;
+#else
+const int dbg = 0;
+#endif
+
+struct LogStream {
+	LogStream(int line) {
+		cerr << "L" << line;
+	}
+
+	~LogStream() {
+		cerr << endl;
+		if (dbg > 0) std::abort();
+		for (;;) new int[1 << 25];
+	}
+};
+template<typename T>
+const LogStream& operator<<(const LogStream& a, const T& b) {
+	cerr << b;
+	return a;
+}
+const LogStream& operator<<(const LogStream& a, ostream& (*b)(ostream&)) {
+	cerr << b;
+	return a;
+}
+
+#define check(cond) if (cond) ; else (LogStream(__LINE__) << "Failed " << #cond << ". ")
+#define check_eq(exp, act) check((exp) == (act)) << " expect " << (exp) << ", got " << (act)
+
+#ifdef MYDEBUG
+#define dcheck(cond) check(cond)
+#else
+#define dcheck(cond) check(true)
+#endif
+
+typedef long long ll;
+
+int gcd(int a, int b) {
+	while (a && b) {
+		a %= b;
+		if (a) b %= a;
+	}
+	return a + b;
+}
+
+void OutputSeq(vector<int>& s) {
+	for (int i = 1; i < s.size(); ++i) {
+		printf("%d %d\n", s[i - 1] + 1, s[i] + 1);
+	}
+}
+
+int N, K, T;
+vector<int> P;
+
+template<typename VecIter>
+void OutputPlan(VecIter F, VecIter L) {
+	int m = L - F, l = F->size();
+	static vector<int> seq;
+	seq.assign(m * l, -1);
+	for (ll i = 0; i < m; ++i) {
+		for (ll j = 0; j < l; ++j) {
+			seq[(i + j * T) % (m * l)] = (*(F + i))[j];
+		}
+	}
+	OutputSeq(seq);
+}
+
+struct CyclesByLen {
+	vector<vector<int>> cycles;
+	int plan_a, plan_b;
+	bool use_plan_b;
+
+	bool Compute() {
+		int l = cycles[0].size(), m = cycles.size();
+		plan_a = -1;
+		for (int i = 1; i <= m; ++i) {
+			if (m % i) continue;
+			if (gcd(i * l, T) == i) {
+				plan_a = i;
+				break;
+			}
+		}
+		if (plan_a == -1) return false;
+		plan_b = -1;
+		if (m / plan_a >= 2 && plan_a * 2 == gcd(plan_a * 2 * l, T)) {
+			plan_b = plan_a * 2;
+		}
+		use_plan_b = false;
+		return true;
+	}
+
+	int L() const {
+		return cycles.size() * cycles[0].size();
+	}
+
+	int LA() const {
+		return L() - cycles.size() / plan_a;
+	}
+
+	int LB() const {
+		check(plan_b != -1);
+		return LA() + 1;
+	}
+
+	void OutputPlan() const {
+		int l = cycles[0].size(), m = cycles.size();
+		check_eq(0, m % plan_a);
+		if (dbg) cerr << "Plan for " << l << "\n";
+		if (use_plan_b) {
+			if (dbg > 0) cerr << "plan b\n";
+			::OutputPlan(cycles.end() - plan_b, cycles.end());
+			m -= plan_b;
+		}
+		for (int i = 0; i < m; i += plan_a) {
+			if (dbg > 0) cerr << "plan a\n";
+			::OutputPlan(cycles.begin() + i, cycles.begin() + i + plan_a);
+		}
+	}
+};
+
+map<int, CyclesByLen> cycles;
+
+void Decompose() {
+	for (int i = 0; i < N; ++i) {
+		if (P[i] != -1) {
+			vector<int> C;
+			for (int j = i; P[j] != -1;) {
+				int k = P[j];
+				C.push_back(j);
+				P[j] = -1;
+				j = k;
+			}
+			cycles[C.size()].cycles.push_back(C);
+		}
+	}
+}
+
+bool Solve() {
+	int sum = 0;
+	for (auto& cc : cycles) {
+		auto& c = cc.second;
+		if (!c.Compute()) return false;
+		sum += c.LA();
+	}
+	if (sum > K) return false;
+	if ((K - sum) % 2) {
+		for (auto& cc : cycles) {
+			auto& c = cc.second;
+			if (c.plan_b != -1) {
+				int sum2 = sum - c.LA() + c.LB();
+				if (sum2 <= K) {
+					c.use_plan_b = true;
+					sum = sum2;
+					break;
+				}
+			}
+		}
+		if ((K - sum) % 2) return false;
+	}
+	for (int i = 0; i < K - sum; ++i) {
+		puts("1 2");
+	}
+	for (auto& c : cycles) {
+		c.second.OutputPlan();
+	}
+	return true;
+}
+
+int main() {
+	cin.sync_with_stdio(false);
+	cout.sync_with_stdio(false);
+
+	cin >> N >> K >> T;
+	P.resize(N);
+	for (int& p : P) {
+		cin >> p;
+		--p;
+	}
+	Decompose();
+	if (dbg) {
+		for (auto& cc : cycles) {
+			for (auto& c : cc.second.cycles) {
+				cerr << "(";
+				for (int i = 0; i < c.size(); ++i) {
+					if (i) cerr << ' ';
+					cerr << c[i];
+				}
+				cerr << ") ";
+			}
+		}
+		cerr << "\n";
+	}
+	if (!Solve()) cout << "no solution\n";
+
+	return 0;
+}

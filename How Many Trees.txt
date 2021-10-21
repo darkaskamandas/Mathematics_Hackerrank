@@ -1,0 +1,1329 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Text;
+
+namespace HR
+{
+    public class Solution
+    {
+        static bool Debugging = false;
+
+        static string GlobalFolder = @"c:\FH\Temp\HackerRank\Mathematics";
+        static string ExampleFolder;
+        static string ExampleName;
+        static int CaseNumber;
+
+        static string strFileInput;
+        static string strFileExpectedOutput;
+        static string strFileOutput;
+
+        static StreamReader fileInput = null;
+        static StreamReader fileExpectedOutput = null;
+        static StreamWriter fileOutput = null;
+
+        static string strLine;
+        static string strParameter;
+        static string[] strData;
+        static int ErrorCounter = 0;
+        static string strResultExpected;
+
+        public static Statistics Stat1 = new Statistics();
+        public static Statistics Stat2 = new Statistics();
+        public static uint mod63 = 100003; 
+        public static uint mod67 = 1000007;
+        public static uint mod73 = 1000003;
+        public static long mod97 = 1000000007;
+        public static long mod99 = 1000000009;
+
+        static Dictionary<string, long> dic = new Dictionary<string, long>();
+        static Dictionary<long, long> dicLongLong = new Dictionary<long, long>();
+
+        public static NumberTheory F1 = new NumberTheory();
+        static Stopwatch sw = new Stopwatch();
+
+        //static long[] Factorials; // = new long[mod73 + 1];
+        static long[,] Cnr;
+        static long[] Inv;
+        static long[,] FaulhaberCoeff2;
+
+        static void Main(string[] args)
+        {
+            //sw.Start();
+
+            SolveHMT();
+            //SolveMaP();
+            //SolveCPS();
+
+            //Console.WriteLine("Time: " + sw.ElapsedMilliseconds.ToString());
+
+            //if (fileOutput != null)
+            //{
+            //    fileOutput.Close();
+            //}
+
+            //Stat1.Convert2Lst();
+            //string s = string.Join(",", Stat1.lstLongInt.Where(item => item.L >= 100).OrderByDescending(item => item.L).Select(item => "(" + item.P + "," + item.L +")").ToArray());
+        }
+
+
+
+        #region How Many Trees
+
+        public static void SolveHMT()
+        {
+            ExampleFolder = "Combinatorics";
+            ExampleName = "How Many Trees";
+            CaseNumber = 19;  // -1 
+            Debugging = File.Exists(InputFile);
+
+            //for (int n = 1; n <= 500; n++)
+            //{
+            //    for (int k = 1; k <= n; k++)
+            //    {
+            //        long R1 = StirlingNumber(n, k);
+            //        long R2 = StirlingNumberEfficient(n, k);
+            //        if (R1 != R2)
+            //        {
+            //            Console.WriteLine(string.Format("S({0},{1})={2}={3}", n, k, R1, R2));    
+            //        }
+            //    }
+            //}
+
+            strLine = ReadLineInput();
+            strData = strLine.Split(' ');
+
+            int N = Convert.ToInt32(strData[0]);    // Nodes
+            int L = Convert.ToInt32(strData[1]);    // Leaves
+            int I = N - L;                          // Inner Nodes
+
+            long Result1 = 0;
+            long Result2 = 1;
+
+            Result1 = 1;
+            for (int i = L + 1; i <= N; i++)
+            {
+                Result1 = (Result1 * i) % mod97;
+            }
+            Result2 = StirlingNumberEfficient(N - 2, N - L);
+            Result1 = (Result1 * Result2) % mod97;
+
+            strLine = Result1.ToString();
+            Console.WriteLine(strLine);
+
+            string strExpectedOutput = CheckOutput(strLine, out strResultExpected);
+            if (strExpectedOutput != string.Empty)
+            {
+                ErrorCounter++;
+                Console.WriteLine(string.Format("Fehler({0},{1}): Exp={2}, Res={3}, Params:({4})", -1, ErrorCounter, strExpectedOutput, strLine, strParameter));
+            }
+        }
+
+
+        private static long StirlingNumberEfficient(int n, int k)
+        {
+            long Res0 = 0;
+            long Res1 = 0;
+            long Res2 = 1;
+            long Comb1 = 1;
+            long Comb2 = 1;
+
+            //long[] Inv = F1.GetInv(k, mod97);
+
+            for (int j = 0; j <= k; j++)
+            {
+                if (j > 0)
+                {
+                    Comb1 = ((Comb1 * ((k - j + 1)) % mod97 * F1.Inverse(j, mod97)) % mod97) % mod97;
+                    Comb1 = (Comb1 + mod97) % mod97;
+                }
+                //Comb2 = (long)F1.ModComb(k, j, mod97);
+                Res0 = (Comb1 * (long)F1.ModPow(j, n, mod97)) % mod97;
+                if ((k-j) % 2 == 0)
+                {
+                    Res1 = (Res1 + Res0) % mod97;
+                }
+                else
+                {
+                    Res1 = (Res1 - Res0) % mod97;
+                }
+                //Res1 += (long)Math.Pow(-1, k - j) * ((long)F1.ModComb(k, j, mod97) * (long)F1.ModPow(j, n, mod97)) % mod97;
+                if (j > 0) Res2 = (Res2 * j) % mod97;
+
+
+            }
+
+            long Res = (Res1 * F1.Inverse(Res2, mod97)) % mod97;
+            Res = (Res + mod97) % mod97;
+
+            return Res;
+        }
+
+        private static long StirlingNumber(int n, int k)
+        {
+            string Key = n.ToString() + "-" + k.ToString();
+
+            if (dic.ContainsKey(Key))
+            {
+                return dic[Key];
+            }
+            else
+            {
+                long Res = -1; 
+                if ((n < k) || (k==0))
+                {
+                    Res = 0;
+                }
+                else if (n == k)
+                {
+                    Res = 1;
+                }
+                else
+                {
+                    Res =((k * StirlingNumber(n - 1, k) % mod97) + StirlingNumber(n - 1, k - 1)) % mod97;
+                }
+
+                dic.Add(Key, Res);
+                return Res;
+            }
+        }
+
+        #endregion
+
+        #region ReadWrite
+
+        public static BigInteger BIConvert(string strNumber)
+        {
+            BigInteger N;
+            bool b = true;
+            b = BigInteger.TryParse(strNumber, out N);
+            return N;
+        }
+
+        public static ulong ConvertString2Long(string Number, ulong m)
+        {
+            ulong Result = 0;
+
+            for (int i = 0; i < Number.Length; i++)
+            {
+                char c = Number[i];
+                ulong Digit = (ulong)(c - '0');
+                Result = ((Result * 10) + Digit) % m;
+            }
+
+            return Result;
+        }
+
+        static string InputFile
+        {
+            get
+            {
+                strFileInput = GlobalFolder + @"\" + ExampleFolder + @"\" + ExampleName + @"\";
+                string CaseName = "Input";
+                if (CaseNumber >= 0)
+                {
+                    CaseName += "%" + CaseNumber.ToString();
+                }
+                strFileInput += CaseName + ".txt";
+
+                return strFileInput;
+            }
+        }
+
+        static string ExpectedOutput
+        {
+            get
+            {
+                strFileInput = GlobalFolder + @"\" + ExampleFolder + @"\" + ExampleName + @"\";
+                string CaseName = "ExpectedOutput";
+                if (CaseNumber >= 0)
+                {
+                    CaseName += "%" + CaseNumber.ToString();
+                }
+                strFileInput += CaseName + ".txt";
+
+                return strFileInput;
+            }
+        }
+
+        static string OutputFile
+        {
+            get
+            {
+                strFileInput = GlobalFolder + @"\" + ExampleFolder + @"\" + ExampleName + @"\";
+                string CaseName = "Output";
+                if (CaseNumber >= 0)
+                {
+                    CaseName += "%" + CaseNumber.ToString();
+                }
+                strFileInput += CaseName + ".txt";
+
+                return strFileInput;
+            }
+        }
+
+        static string ReadLineInput()
+        {
+            string strLine;
+            if (Debugging)
+            {
+                if (fileInput == null)
+                {
+                    string strFileInput = InputFile;
+                    fileInput = new StreamReader(strFileInput);
+                }
+                strLine = fileInput.ReadLine();
+            }
+            else
+            {
+                strLine = Console.ReadLine();
+            }
+
+            if (!string.IsNullOrEmpty(strLine))
+            {
+                strLine = strLine.TrimEnd();
+            }
+
+            return strLine;
+        }
+
+        static string CheckOutput(string strResult,
+                                  out string strResultExpected)
+        {
+            string strLine = ReadLineExpectedOutput();
+            //string[] strData = strLine.Split(' ');
+            //string strResultExpected = strData[0];
+            strResultExpected = strLine; //.TrimEnd();
+
+            //Stat1.AddString(strResultExpected, 1);
+
+            bool Result = (strResult == strResultExpected);
+            if (Result)
+            {
+                return string.Empty;
+            }
+            else
+            {
+                return strResultExpected;
+            }
+        }
+
+        static string ReadLineExpectedOutput()
+        {
+            if (File.Exists(ExpectedOutput))
+            {
+                if (fileExpectedOutput == null)
+                {
+                    fileExpectedOutput = new StreamReader(ExpectedOutput);
+                }
+                return fileExpectedOutput.ReadLine();
+            }
+            return string.Empty;
+        }
+
+        static void WriteLineOutput(string strLine, bool last = false)
+        {
+            if (File.Exists(OutputFile))
+            {
+                if (fileOutput == null)
+                {
+                    fileOutput = new StreamWriter(OutputFile);
+                }
+                fileOutput.WriteLine(strLine);
+                Console.WriteLine(strLine);
+            }
+            else
+            {
+                Console.WriteLine(strLine);
+            }
+        }
+
+        #endregion
+    }
+
+    #region Statistics
+
+    public class Statistics
+    {
+        public Dictionary<BigInteger, BigInteger> dicBB = new Dictionary<BigInteger, BigInteger>();
+        public Dictionary<BigInteger, long> dicBI = new Dictionary<BigInteger, long>();
+        public Dictionary<string, long> dicString = new Dictionary<string, long>();
+        public Dictionary<ulong, ulong> dicULong = new Dictionary<ulong, ulong>();
+        public List<Pair> lstLongInt = new List<Pair>();
+
+        public void AddBB(BigInteger N, BigInteger counter)
+        {
+            if (!this.dicBB.ContainsKey(N))
+            {
+                this.dicBB.Add(N, counter);
+            }
+            else
+            {
+                dicBB[N] += counter;
+            }
+        }
+
+        public void AddBI(BigInteger N, long counter)
+        {
+            if (!this.dicBI.ContainsKey(N))
+            {
+                this.dicBI.Add(N, counter);
+            }
+            else
+            {
+                dicBI[N] += counter;
+            }
+        }
+
+        public void AddUlong(ulong N, ulong counter)
+        {
+            if (!this.dicULong.ContainsKey(N))
+            {
+                this.dicULong.Add(N, counter);
+            }
+            else
+            {
+                dicULong[N] += counter;
+            }
+        }
+
+        public void AddString(string N, long counter)
+        {
+            if (!this.dicString.ContainsKey(N))
+            {
+                this.dicString.Add(N, counter);
+            }
+            else
+            {
+                dicString[N] += counter;
+            }
+        }
+
+        public void Convert2Lst()
+        {
+            foreach (KeyValuePair<BigInteger, long> P in dicBI)
+            {
+                lstLongInt.Add(new Pair((long)P.Key, P.Value));
+            }
+        }
+
+        public static bool SubsetULong(Statistics S1, Statistics S2)
+        {
+            bool Subset = true;
+
+            foreach (KeyValuePair<ulong, ulong> Pair in S1.dicULong)
+            {
+                if (S2.dicULong.ContainsKey(Pair.Key))
+                {
+                    if (Pair.Value != S2.dicULong[Pair.Key])
+                    {
+                        Subset = false;
+                    }
+                }
+                else
+                {
+                    Subset = false;
+                }
+            }
+
+            return Subset;
+        }
+
+        public static bool EqualULong(Statistics S1, Statistics S2)
+        {
+            bool Equal = Statistics.SubsetULong(S1, S2) && Statistics.SubsetULong(S2, S1);
+            return Equal;
+        }
+
+        public void Clear()
+        {
+            dicBB = new Dictionary<BigInteger, BigInteger>();
+            dicBI = new Dictionary<BigInteger, long>();
+            dicString = new Dictionary<string, long>();
+            dicULong = new Dictionary<ulong, ulong>();
+        }
+
+        public string Print()
+        {
+            string strResult = string.Empty;
+
+            strResult += string.Join(",", this.dicBI.Select(item => item).OrderByDescending(item => item.Value).ToArray()) + Environment.NewLine;
+            strResult += string.Join(",", this.dicBI.Select(item => item).OrderBy(item => item.Key).ToArray()) + Environment.NewLine;
+            BigInteger BISum = (BigInteger)this.dicBI.Sum(item => (decimal)item.Key * (decimal)item.Value);
+            strResult += "Operations: " + BISum.ToString() + Environment.NewLine;
+
+            return strResult;
+        }
+    }
+
+    #endregion
+
+    #region Pair_Point
+
+    public class Pair
+    {
+        public long P;
+        public long L;
+
+        public Pair(long P,
+                    long L)
+        {
+            this.P = P;
+            this.L = L;
+        }
+
+        public Pair Clone()
+        {
+            return new Pair(this.P, this.L);
+        }
+
+        public long Value
+        {
+            get
+            {
+                return (long)BigInteger.Pow(this.P, (int)this.L);
+            }
+        }
+
+        public override string ToString()
+        {
+            string strReturn = string.Format("({0},{1})", this.P, this.L);
+            return strReturn;
+        }
+    }
+
+    public class Point : IComparable
+    {
+        public double x;
+        public double y;
+        public int Number;
+        public double Weight1;
+        public double Weight2;
+
+        public Point(string strCoordinates,
+                     int Number = -1)
+        {
+            string[] strData = strCoordinates.Split(' ');
+            this.x = Convert.ToInt32(strData[0]);
+            this.y = Convert.ToInt32(strData[1]);
+            this.Number = Number;
+        }
+
+        public Point(double x,
+                     double y,
+                     int Number = -1)
+        {
+            this.x = x;
+            this.y = y;
+            this.Number = Number;
+        }
+
+        private void Init()
+        {
+            this.Number = -1;
+            this.Weight1 = 0;
+            this.Weight2 = 0;
+        }
+
+        public double Weight
+        {
+            get
+            {
+                return this.Weight1 + this.Weight2;
+            }
+        }
+
+        public static bool operator ==(Point P1, Point P2)
+        {
+            return P1.CompareTo(P2) == 0;
+        }
+
+        public static bool operator !=(Point P1, Point P2)
+        {
+            return P1.CompareTo(P2) != 0;
+        }
+
+        public int CompareTo(object obj)
+        {
+            Point P = (Point)obj;
+            int Result = -1;
+            if ((this.x == P.x) && (this.y == P.y))
+            {
+                Result = 0;
+            }
+            return Result;
+        }
+
+        public int CompareByX(Point P1, Point P2)
+        {
+            int Result = P1.x.CompareTo(P2.x);
+            return Result;
+        }
+
+        public int CompareByY(Point P1, Point P2)
+        {
+            int Result = P1.y.CompareTo(P2.y);
+            return Result;
+        }
+
+        public override string ToString()
+        {
+            string strReturn = string.Format("({0},{1}) - Weight({2},{3})", this.x, this.y, this.Weight1, this.Weight2);
+            return strReturn;
+        }
+    }
+
+    #endregion
+
+    #region NumberTheory
+
+    public class NumberTheory
+    {
+        BigInteger g = 3 * 5 * 7 * 11 * 13 * 17 * 19;
+        
+        public Dictionary<string, long> dicInverses = new Dictionary<string, long>();
+        public Dictionary<string, BigInteger> dicCombs = new Dictionary<string, BigInteger>();
+
+        public long[] Primes;
+        public Pair LastPair;
+
+        public List<Pair> Factorize2(long N, out long N1)
+        {
+            List<Pair> Factorization1 = this.Factorize(N);
+
+            List<Pair> Factorization2 = new List<Pair>();
+            N1 = 1;
+            for (int i = 0; i < Factorization1.Count; i++)
+            {
+                if (Factorization1[i].L % 2 == 1)
+                {
+                    Factorization2.Add(new Pair(Factorization1[i].P, 1));
+                    N1 *= Factorization1[i].P;
+                }
+            }
+
+            return Factorization2;
+        }
+
+        public List<Pair> Factorize(long N, bool Force = false)
+        {
+            int PrimeIndex = 0;
+            long NCopy = N;
+            Pair PL;
+            List<Pair> Factorization = new List<Pair>();
+
+            LastPair = null;
+
+            int Pmax = (int)Math.Ceiling(Math.Sqrt((double)N));
+
+            //if ((this.Primes == null) || (this.Primes[this.Primes.Length - 1] < Pmax))
+            //{
+            //    this.SieveErathostenes(Pmax);
+            //}
+
+            long P = 1;
+            while ((NCopy > 1) && (Force || (P <= Pmax)) && (PrimeIndex < Primes.Length))
+            {
+                P = Primes[PrimeIndex];
+                PL = new Pair(Primes[PrimeIndex], 0);
+
+                //Solution.Stat1.AddUlong(0, 1);
+                while (NCopy % P == 0)
+                {
+                    PL.L++;
+                    NCopy = NCopy / P;
+                }
+
+                if (PL.L > 0)
+                {
+                    Factorization.Add(PL);
+
+                    // müsste theoretisch schneller sein, aber der Primzahltest ist häufig langsamer, als Durchdividieren (Brute Force)
+                    //if ((P >= 10000) && (NCopy > 1))
+                    //{
+                    //    bool IsPrime = NumberTheory.IsPrime(NCopy);
+                    //    if (IsPrime)
+                    //    {
+                    //        break;
+                    //    }
+                    //}
+                }
+
+                PrimeIndex++;
+            }
+
+            if (NCopy > 1)
+            {
+                LastPair = new Pair(NCopy, 1);
+                Factorization.Add(LastPair);
+            }
+
+            return Factorization;
+        }
+
+        public void SieveErathostenes(int Max)
+        {
+            Primes = this.GetPrimes(Max);
+        }
+
+        private long[] GetPrimes(int Max)
+        {
+            Max++;
+            bool[] arr = new bool[Max];
+            int index;
+
+            for (int i = 0; i < arr.Length; i++)
+            {
+                arr[i] = true;
+            }
+
+            arr[0] = false;
+            arr[1] = false;
+
+            int maxStep = (int)Math.Round(Math.Sqrt(Max));
+            for (int step = 2; step <= maxStep; step++)
+            {
+                if (arr[step])
+                {
+                    index = 2 * step;
+                    while (index < arr.Length)
+                    {
+                        arr[index] = false;
+                        index += step;
+                    }
+                }
+            }
+
+            int NOP = arr.Where(item => item == true).Count();
+
+            index = 0;
+            long[] primes = new long[NOP];
+            for (int i = 0; i < arr.Length; i++)
+            {
+                if (arr[i])
+                {
+                    primes[index++] = i;
+                }
+            }
+
+            return primes;
+        }
+
+        private void PrimesTest()
+        {
+            string strFileInput = @"c:\FH\Temp\HackerRank\Mathematics\ListOfPrimes.txt";
+            StreamReader fileInput = new StreamReader(strFileInput);
+
+            List<int> lstPrimes = new List<int>();
+            while (!fileInput.EndOfStream)
+            {
+                string strLine = fileInput.ReadLine();
+                string[] strData = strLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string strPrime in strData)
+                {
+                    lstPrimes.Add(Convert.ToInt32(strPrime));
+                }
+            }
+
+            this.SieveErathostenes(lstPrimes[lstPrimes.Count - 1]);
+
+            for (int i = 0; i < lstPrimes.Count; i++)
+            {
+                if (lstPrimes[i] != this.Primes[i])
+                {
+                    Console.WriteLine("Fehler");
+                }
+            }
+        }
+
+        public BigInteger Phin(long n)
+        {
+            List<Pair> lstPair = this.Factorize(n);
+            return this.Phin(lstPair);
+        }
+
+        public BigInteger Phin(List<Pair> lstPair)
+        {
+            BigInteger Res = 1;
+
+            foreach (Pair PL in lstPair)
+            {
+                Res = Res * (PL.P - 1) * BigInteger.Pow(PL.P, (int)PL.L - 1);
+            }
+
+            return Res;
+        }
+
+        public List<BigInteger> Divisors(long N)
+        {
+            List<Pair> lstN = this.Factorize(N);
+            List<BigInteger> lstDivisors = this.Divisors(lstN);
+            return lstDivisors;
+        }
+
+        public List<BigInteger> Divisors(List<Pair> lstPairs)
+        {
+            List<BigInteger> lstDivisors = new List<BigInteger>();
+
+            lstDivisors.Add(1);
+            foreach (Pair LP in lstPairs)
+            {
+                int count = lstDivisors.Count;
+                for (int i = 1; i <= LP.L; i++)
+                {
+                    BigInteger L1 = BigInteger.Pow(LP.P, i);
+                    for (int j = 0; j < count; j++)
+                    {
+                        lstDivisors.Add(lstDivisors[j] * L1);
+                    }
+                }
+            }
+
+            return lstDivisors;
+        }
+
+        public void IsPrimeTest(int Max = 200)
+        {
+            bool b;
+            for (int i = 1; i < Max; i++)
+            {
+                if (IsPrime(i))
+                {
+                    Console.WriteLine(i.ToString());
+                }
+            }
+
+            long n = 9999999967;
+            b = IsPrime(n);
+            Console.WriteLine(n.ToString() + " is prime:" + b.ToString());
+
+            n = 9999999961;
+            b = IsPrime(n);
+            Console.WriteLine(n.ToString() + " is prime:" + b.ToString());
+
+        }
+
+        public bool IsPrime(BigInteger n)
+        {
+            if (n <= 1)
+            {
+                return false;
+            }
+            if ((n == 2) || (n == 3) || (n == 5) || (n == 7) || (n == 11) || (n == 13))
+            {
+                return true;
+            }
+            if ((n % 2 == 0) || (n % 3 == 0) || (n % 5 == 0) || (n % 7 == 0))
+            {
+                return false;
+            }
+
+            //if (BigInteger.GreatestCommonDivisor(n, g) > 1)
+            //{
+            //    return false;
+            //}
+            else
+            {
+                bool prime = true;
+                // n-1 = d * 2^j
+                BigInteger d = n - 1;
+                int j = 0;
+                while (d % 2 == 0)
+                {
+                    j++;
+                    d >>= 1;
+                }
+
+                // Wikipedia
+                int[] A;
+                if (n < 2047)
+                {
+                    A = new int[1] { 2 };
+                }
+                else if (n < 1373653)
+                {
+                    A = new int[2] { 2, 3 };
+                }
+                else if (n < 9080191)
+                {
+                    A = new int[2] { 31, 73 };
+                }
+                else if (n < 1122004669633)
+                {
+                    A = new int[4] { 2, 13, 23, 1662803 };
+                }
+                else
+                {
+                    A = new int[6] { 2, 3, 5, 7, 11, 13 };
+                }
+                for (int i = 0; i < A.Length; i++)
+                {
+                    prime = true;
+                    BigInteger Remainder = BigInteger.ModPow(A[i], d, n);
+
+                    if ((Remainder == 1) || (Remainder == n - 1))
+                    {
+                    }
+                    else
+                    {
+                        int k = 0;
+                        while (k < j)
+                        {
+                            Remainder = (Remainder * Remainder) % n;
+                            if (Remainder == 1)
+                            {
+                                return false;
+                            }
+                            if (Remainder == n - 1)
+                            {
+                                break;
+                            }
+                            k++;
+                        }
+                        if (k == j)
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return prime;
+            }
+        }
+
+        public BigInteger getRandom(int length)
+        {
+            Random random = new Random();
+            byte[] data = new byte[length];
+            random.NextBytes(data);
+            return new BigInteger(data);
+        }
+
+        public long Factorial(long n)
+        {
+            if (n <= 1)
+            {
+                return 1;
+            }
+            else
+            {
+                return n * Factorial(n - 1);
+            }
+        }
+
+        // Wolfram Alpha: powermod(3861, -1, 37)
+        public long Inverse(long a, long b)
+        {
+            string Key = a.ToString() + "-" + b.ToString();
+            long fa;
+
+            if ((dicInverses != null) && (dicInverses.ContainsKey(Key)))
+            {
+                //Solution.Stat1.AddBI(0, 1);
+                fa = dicInverses[Key];
+            }
+            else
+            {
+                //Solution.Stat1.AddBI(1, 1);
+                long fb;
+                long gcd = EuclidExtended(a, b, out fa, out fb);
+
+                if (fa < 0)
+                {
+                    fa += b;
+                }
+
+                if (dicInverses != null) dicInverses.Add(Key, fa);
+            }
+
+            return fa;
+        }
+
+        // Solve ax = b mod m
+        // Res >= 0 --> Lösung
+        // Res = -1 --> jede Zahl ist Lösung
+        // Res = -2 --> keine Lösung
+        public long SolveEquation(long a, long b, long m)
+        {
+            long Res = -1;
+
+            // keine Lösung
+            if ((a == 0) && (b != 0))
+            {
+                Res = -2;
+            }
+            else if ((a == 0) && (b == 0))
+            {
+                Res = -1;
+            }
+            else if ((a != 0) && (b == 0))
+            {
+                Res = 0;
+            }
+            else
+            {
+                long fa;
+                long fm;
+                long gcd = EuclidExtended(a, m, out fa, out fm);
+
+                if (b % gcd == 0)
+                {
+                    if (fa < 0)
+                    {
+                        fa += m;
+                    }
+                    Res = fa * b / gcd;
+                }
+            }
+
+            return Res;
+        }
+
+        public ulong Gcd(ulong a, ulong b)
+        {
+            ulong temp = 0;
+            while (b != 0)
+            {
+                temp = a % b;
+                a = b;
+                b = temp;
+            }
+            return a;
+        }
+
+        public long EuclidExtended(long a, long b, out long s, out long t)
+        {
+            long r = a; long r0 = b;
+            s = 1; long s0 = 0;
+            t = 0; long t0 = 1;
+            long q = -1;
+            long temp;
+            long d = 1;
+            while (r0 != 0)
+            {
+                q = r / r0;
+
+                temp = r;
+                r = r0;
+                r0 = temp % r0;
+
+                temp = s;
+                s = s0;
+                s0 = temp - q * s0;
+
+                temp = t;
+                t = t0;
+                t0 = temp - q * t0;
+                //7: (r, s, t, r0, s0, t0) = (r0, s0, t0, r mod r0, s - qs0, t - qt0)
+                //9: return (d, s, t)
+
+            }
+            return r;
+        }
+
+        public BigInteger LCM(BigInteger a, BigInteger b, BigInteger c)
+        {
+            BigInteger LCMab = this.LCM(a, b);
+            BigInteger LCMabc = this.LCM(LCMab, c);
+
+            return LCMabc;
+        }
+
+        public BigInteger LCM(BigInteger a, BigInteger b)
+        {
+            BigInteger Res = 0;
+
+            if ((a != 0) && (b != 0))
+            {
+                BigInteger M = a * b;
+                BigInteger gcd = BigInteger.GreatestCommonDivisor(a, b);
+                Res = M / gcd;
+            }
+
+            return Res;
+            //return a * b / BigInteger.GreatestCommonDivisor(a, b);
+        }
+
+        public long CountDivisor(BigInteger N, BigInteger m)
+        {
+            long count = 0;
+            while (N % m == 0)
+            {
+                count++;
+                N /= m;
+            }
+            return count;
+        }
+
+        // Calculate a^(Exp1^Exp2) mod n
+        // a^(2^a) mod b = a^(2^a mod phi(b)) mod b
+        // Alternative: CRT with Theorem of Fermat
+        public BigInteger SolveSuperpower(int Basis, int Exp1, int Exp2, int n)
+        {
+            BigInteger Res = 0;
+
+            // Witno, Theory of Numbers, Chapter 4
+            int L = 0;
+            int ni = n;
+            int di = (int)BigInteger.GreatestCommonDivisor(Basis, ni);
+            while (di > 1)
+            {
+                ni = ni / di;
+                di = (int)BigInteger.GreatestCommonDivisor(Basis, ni);
+                L++;
+            }
+
+            this.SieveErathostenes(ni);
+
+            List<Pair> lstPairL = this.Factorize(ni);
+            BigInteger PhiL = this.Phin(lstPairL);
+
+            BigInteger ExpReduced = BigInteger.ModPow(Exp1, Exp2, PhiL);
+            ExpReduced = (ExpReduced - L) % PhiL;
+            while (ExpReduced < 0)
+            {
+                ExpReduced += PhiL;
+            }
+
+            Res = BigInteger.ModPow(Basis, ExpReduced + L, n);
+
+            return Res;
+        }
+
+        public long SolveLucas(long N, long K, long P)
+        {
+            long Res = 1;
+
+            while (N > 0)
+            {
+                long Res1 = (long)ModComb(N % P, K % P, P);
+                if (Res1 == 0)
+                {
+                    Res = 0;
+                    break;
+                }
+                Res = Res * Res1; // % P;
+                N = N / P;
+                K = K / P;
+            }
+
+            Res %= P;
+
+            return (long)Res;
+        }
+
+        public long Catalan(long N, long M)
+        {
+            long Res1 = SolveLucas(2 * N, N, M);
+            //long Res1 = (long)ModComb(2 * N, N, M);
+            long Res2 = Inverse(N + 1, M);
+            long Res3 = (Res1 * Res2) % M;
+
+            return Res3;
+        }
+
+        public BigInteger ModComb(long N, long K, long mod = -1)
+        {
+            string strKey;
+
+            BigInteger Res;
+            if ((K == 0) || (N == K))
+            {
+                Res = 1;
+            }
+            else if ((K == 1) || (K == N - 1))
+            {
+                Res = N;
+            }
+            else if (N < K)
+            {
+                Res = 0;
+            }
+            else
+            {
+                strKey = N.ToString() + "," + K.ToString() + "," + mod.ToString();
+                if ((dicCombs != null) && (dicCombs.ContainsKey(strKey)))
+                {
+                    //Solution.Stat1.AddBI(0, 1);
+                    return dicCombs[strKey];
+                }
+
+                long Delta = N - K;
+                strKey = N.ToString() + "," + Delta.ToString() + "," + mod.ToString();
+                if ((dicCombs != null) && (dicCombs.ContainsKey(strKey)))
+                {
+                    //Solution.Stat1.AddBI(0, 1);
+                    return dicCombs[strKey];
+                }
+
+                if ((Delta < K) && (Delta >= 0))
+                {
+                    K = Delta;
+                }
+
+                //Solution.Stat1.AddBI(1, 1);
+                long Z1 = 1;
+                long Z2 = 1;
+
+                for (long i = N; i >= N - K + 1; i--)
+                {
+                    Z1 *= i;
+                    if (mod != -1) Z1 %= mod;
+                }
+                for (long i = 1; i <= K; i++)
+                {
+                    Z2 *= i;
+                    if (mod != -1) Z2 %= mod;
+                }
+
+                if (mod == -1)
+                {
+                    Res = (Z1 / Z2);
+                }
+                else
+                {
+                    //BigInteger gcd = BigInteger.GreatestCommonDivisor(Z1, Z2);
+                    //Z1 /= gcd;
+                    //Z2 /= gcd;
+
+                    //Z1 %= M;
+                    //Z2 %= M;
+
+                    long Inverse = this.Inverse((long)Z2, mod);
+                    Res = (Z1 * Inverse) % mod;
+                }
+
+                if (dicCombs != null) dicCombs.Add(strKey, Res);
+            }
+            return Res;
+        }
+
+        public long ModPow(long n, long k, long mod)
+        {
+            long Res = 1;
+            long x = n % mod;
+	        while(k > 0)
+	        {
+                if ((k & 1) == 1)
+                {
+                    Res = (Res * x) % mod;
+                }
+                x = (x * x) % mod;
+		        k = k >> 1;
+	        }
+            return Res;
+        }
+
+
+        public long[] GetFactorials(int n, long mod)
+        {
+            long[] Factorials = new long[n + 1];
+
+            Factorials[0] = 1;
+            for (int i = 1; i < Factorials.Length; i++)
+            {
+                Factorials[i] = (Factorials[i - 1] * i) % mod;
+            }
+
+            return Factorials;
+        }
+
+        public long[] GetInvFactorials(long[] Factorials, long mod)
+        {
+            long[] InvFactorials = new long[Factorials.Length];
+
+            InvFactorials[InvFactorials.Length - 1] = this.Inverse(Factorials[Factorials.Length - 1], mod);
+            for (int i = InvFactorials.Length - 1; i > 1; i--)
+            {
+                InvFactorials[i - 1] = (InvFactorials[i] * i) % mod;
+            }
+
+            return InvFactorials;
+        }
+
+        public long[,] GetCnr(int n_max, long mod)
+        {
+            long[,] Cnr = new long[n_max + 1, n_max + 1];
+
+            Cnr[0, 0] = 1;
+            for (int n = 1; n < Cnr.GetLength(0); n++)
+            {
+                Cnr[n, 0] = 1;
+                for (int k = 1; k < n; k++)
+                {
+                    Cnr[n, k] = (Cnr[n - 1, k - 1] + Cnr[n - 1, k]) % mod;
+                }
+                Cnr[n, n] = 1;
+            }
+
+            return Cnr;
+        }
+
+        public long[] GetInv(int n_max, long mod)
+        {
+            long[] Inv = new long[n_max];
+            Inv[1] = 1;
+            for (int i = 2; i < Inv.Length; i++)
+            {
+                Inv[i] = (mod - mod / i) * Inv[mod % i] % mod;
+            }
+            return Inv;
+        }
+
+        public long[] GetBernoullie(long[,] Cnr, long[] Inv, long mod)
+        {
+            long[] Bernoullie = new long[Cnr.GetLength(0) - 1];
+            Bernoullie[0] = 1;
+            Bernoullie[1] = -Inv[2];
+            if (Bernoullie[1] < 0) Bernoullie[1] += mod;
+            for (int i = 2; i < Bernoullie.Length; i++)
+            {
+                Bernoullie[i] = 0;
+                if ((i & 1) == 0)
+                {
+                    for (int j = 0; j <= i - 1; j++)
+                    {
+                        Bernoullie[i] = (Bernoullie[i] + Cnr[i + 1, j] * Bernoullie[j]) % mod;
+                    }
+                    Bernoullie[i] = (Bernoullie[i] * (-Inv[i + 1])) % mod;
+                    if (Bernoullie[i] < 0) Bernoullie[i] += mod;
+                }
+            }
+
+            return Bernoullie;
+        }
+
+        public long[,] GetFaulhaberCoeff1(long[,] Cnr, long[] Bernoullie, long mod)
+        {
+            long[,] FaulhaberCoeff1 = new long[Bernoullie.Length - 1, Bernoullie.Length - 1];
+            for (int i = 0; i < FaulhaberCoeff1.GetLength(0); i++)
+            {
+                for (int j = 0; j < FaulhaberCoeff1.GetLength(1); j++)
+                {
+                    FaulhaberCoeff1[i, j] = (Cnr[i, j] * Bernoullie[j]) % mod;
+                }
+            }
+            return FaulhaberCoeff1;
+        }
+
+        public long[,] GetFaulhaberCoeff2(long[,] FaulhaberCoeff1, long[] Inv, long mod)
+        {
+            long[,] FaulhaberCoeff2 = new long[FaulhaberCoeff1.GetLength(0), FaulhaberCoeff1.GetLength(1)];
+            for (int i = 0; i < FaulhaberCoeff2.GetLength(0); i++)
+            {
+                for (int j = 0; j < FaulhaberCoeff2.GetLength(1); j++)
+                {
+                    FaulhaberCoeff2[i, j] = (Inv[i] * FaulhaberCoeff1[i, j]) % mod;
+                    if (FaulhaberCoeff2[i, j] < 0) FaulhaberCoeff2[i, j] += mod;
+                }
+            }
+            return FaulhaberCoeff2;
+        }
+    }
+
+    #endregion
+}

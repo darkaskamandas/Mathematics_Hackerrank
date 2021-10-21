@@ -1,0 +1,181 @@
+using System;
+using System.Collections.Generic;
+using System.Numerics;
+
+struct Pair
+{
+	int a, b;
+	public Pair(int _a, int _b)
+	{
+		a = _a;
+		b = _b;
+	}
+}
+
+struct Triple
+{
+	int a, b, c;
+	public Triple(int _a, int _b, int _c)
+	{
+		a = _a;
+		b = _b;
+		c = _c;
+	}
+}
+
+class Program
+{
+	static long mod = 1000000009;
+	static int n, k, f;
+	static int[] types = new int[10], parent = new int[100000];
+	static List<int>[] vertices = new List<int>[100000];
+
+	static BigInteger power(int n, int k)
+	{
+		return BigInteger.Pow(n, k);
+	}
+
+	static BigInteger count4(int n)
+	{
+		return (power(n, 2) * 11 + power(n, 4)) / 12;
+	}
+
+	static BigInteger count6(int n)
+	{
+		return (power(n, 2) * 8 + power(n, 3) * 12 + power(n, 4) * 3 + power(n, 6)) / 24;
+	}
+
+	static BigInteger count8(int n)
+	{
+		return (power(n, 2) * 6 + power(n, 4) * 17 + power(n, 8)) / 24;
+	}
+
+	static BigInteger count12(int n)
+	{
+		return (power(n, 4) * 44 + power(n, 6) * 15 + power(n, 12)) / 60;
+	}
+
+	static BigInteger count20(int n)
+	{
+		return (power(n, 4) * 24 + power(n, 8) * 20 + power(n, 10) * 15 + power(n, 20)) / 60;
+	}
+
+	static long[,] choosea = new long[100005,25];
+	static long choose(int n, int k)
+	{
+		long i;
+		if (choosea[n,k]>0)
+		{
+			return choosea[n,k];
+		}
+		BigInteger s = 1;
+		for (i = 0; i < k; i++)
+			s *= (n - i);
+		for (i = 0; i < k; i++)
+			s /= (i + 1);
+		s = s % mod;
+		choosea[n, k] = (long)s;
+		return (long)s;
+	}
+
+	static BigInteger countt(int t, int k)
+	{
+		if (t == 4)
+		{
+			return count4(k);
+		}
+		if (t == 6)
+		{
+			return count6(k);
+		}
+		if (t == 8)
+		{
+			return count8(k);
+		}
+		if (t == 12)
+		{
+			return count12(k);
+		}
+		return count20(k);
+	}
+
+	static long[,] counta = new long[25,25];
+	static long count(int t, int n)
+	{
+		if (counta[t,n]>0)
+		{
+			return counta[t, n] - 1;
+		}
+		if (n == 1)
+			return 1;
+		BigInteger s = countt(t, n) % mod;
+		for (int i = 1; i < n; i++)
+		{
+			s = (s - count(t, i) * choose(n, i) % mod + mod) % mod;
+		}
+		counta[t, n] = (long)s + 1;
+		return (long)s;
+	}
+
+	static long[,,] dfsa = new long[50005,5,25];
+	static long dfs(int u, int mt, int mk)
+	{
+		int t, i, j;
+		if (dfsa[u, mt, k - mk] > 0)
+			return dfsa[u, mt, k - mk] - 1;
+		long s = 0;
+		for (i = 1; i <= Math.Min(types[mt], mk); i++)
+		{
+			long c = 1;
+			for (j = 0; j < vertices[u].Count; j++)
+			{
+				long x = 0;
+				for (t = 0; t < f; t++)
+				{
+					if (t != mt)
+					{
+						x = (x + dfs(vertices[u][j], t, k - i)) % mod;
+					}
+				}
+				c = c * x % mod;
+			}
+			long ct = count(types[mt], i) * choose(mk, i) % mod;
+			//				Console.WriteLine(types[t] + " " + mk + " " + i + " " + ct);
+			s = (s + ct * c) % mod;
+		}
+		dfsa[u, mt, k - mk] = s + 1;
+		return s;
+	}
+
+	static void Main(string[] args)
+	{
+		String[] a = Console.ReadLine().Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+		n = int.Parse(a[0]);
+		k = int.Parse(a[1]);
+		f = int.Parse(a[2]);
+		int i, p;
+		a = Console.ReadLine().Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+		for (i = 0; i < f; i++)
+			types[i] = int.Parse(a[i]);
+		if (n > 1)
+		{
+			a = Console.ReadLine().Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+		}
+		for (i = 0; i < n; i++)
+		{
+			vertices[i] = new List<int>();
+		}
+		for (i = 1; i < n; i++)
+		{
+			p = int.Parse(a[i - 1]);
+			p--;
+			vertices[p].Add(i);
+		}
+		long s = 0;
+		for (int t = 0; t < f; t++)
+		{
+			s = (s + dfs(0, t, k)) % mod;
+		}
+		Console.WriteLine(s);
+	}
+}

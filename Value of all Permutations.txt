@@ -1,0 +1,101 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        static long Mod = 1000000007;
+        struct Pair { public long Value, Result;}
+
+        static void Main()
+        {
+            StreamReader sr = new StreamReader(Console.OpenStandardInput());
+            StreamWriter sw = new StreamWriter(Console.OpenStandardOutput());
+
+            int p = Convert.ToInt32(sr.ReadLine());
+            int n = Convert.ToInt32(sr.ReadLine());
+            Mod = p; Init(n);
+            string[] input = sr.ReadLine().Split(' ');
+            long[] nums = new long[n];
+
+            for (int i = 0; i < n; i++)
+                nums[i] = Convert.ToInt64(input[i]);
+
+            Cal(nums);
+            int q = Convert.ToInt32(sr.ReadLine());
+
+            for (int i = 0; i < q; i++)
+            {
+                long m = Convert.ToInt64(sr.ReadLine());
+                int index = Array.BinarySearch(Values, m);
+                index = index < 0 ? -index - 2 : index;
+                if (index < 0)
+                    sw.WriteLine(0);
+                else
+                    sw.WriteLine(Result[index]);
+            }
+
+            sw.Flush();
+        }
+
+        static long[] Facts, InvFacts, Invs;
+        static long[] Values, Result;
+
+        static void Init(int n)
+        {
+            Invs = new long[n + 1];
+            Invs[0] = Invs[1] = 1;
+            for (int i = 2; i < Invs.Length; i++)
+                Invs[i] = (Mod - Mod / i * Invs[Mod % i] % Mod) % Mod;
+
+            InvFacts = new long[n + 1];
+            Facts = new long[n + 1];
+            Facts[0] = InvFacts[0] = 1;
+
+            for (int i = 1; i <= n; i++)
+            {
+                InvFacts[i] = InvFacts[i - 1] * Invs[i] % Mod;
+                Facts[i] = Facts[i - 1] * i % Mod;
+            }
+        }
+
+        static void Cal(long[] nums)
+        {
+            int n = nums.Length;
+            Array.Sort(nums);
+            long total = Facts[n - 1];
+            List<long> values = new List<long>();
+            List<long> result = new List<long>();
+
+            for (int i = 0; i < nums.Length;)
+            {
+                int index = i;
+                long s = nums[i];
+                while (i < n && nums[i] == s) { i++; }
+                values.Add(nums[i - 1]);
+                total = total * InvFacts[i - index] % Mod;
+            }
+
+            Values = values.ToArray();
+            long sum = 0;
+
+            for (int i = 0; i < nums.Length;)
+            {
+                long s = nums[i], pre = total;
+                while (i < n && nums[i] == s) 
+                {
+                    sum = (sum + nums[i]) % Mod;
+                    pre = total;
+                    total = total * (n - i) % Mod * Invs[n - i - 1] % Mod;
+                    i++; 
+                }
+
+                result.Add(pre * sum % Mod);
+            }
+
+            Result = result.ToArray();
+        }
+    }
+}

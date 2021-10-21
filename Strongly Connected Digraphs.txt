@@ -1,0 +1,136 @@
+using System.Collections.Generic;
+using System.Linq;
+using System;
+using System.IO;
+
+class SimpleNT
+{
+	public static uint mul_mod32(uint a, uint b, uint N)
+	{
+		return (uint)(((ulong)a * (ulong)b) % (ulong)N);
+	}
+
+}
+class Solution
+{
+	private uint[] _h;          // h[n]
+	private uint[] _S;          // S[n]
+	private uint[] _binomial_nm1;    // binomial(n - 1, k)
+	private uint[] _binomial;   // binomial(n, k) for current n
+	private uint[] _two_to_k;   // 2^k for k in 0 .. n
+	private uint[] _two_to_kn;  // 2^{k n}
+	private uint[] _two_to_knm1;    // 2^{k(n-1)}
+	private uint _n;          // Current n
+	private uint _N;          // Modulus
+	public Solution(uint n, uint N)
+	{
+		_N = N;
+		// Initialize all arrays for maximum capacity
+		_h = new uint[n + 1];
+		_S = new uint[n + 1];
+		_binomial = new uint[n + 1];    // 0 .. n
+		_binomial_nm1 = new uint[n + 1];
+		_two_to_k = new uint[n + 1];
+		_two_to_knm1 = new uint[n + 1];
+
+		_h[0] = 0; _h[1] = 1;
+		_S[0] = 0; _S[1] = 1;
+		_binomial_nm1[0] = 1;   // C(0, 0)
+		_binomial[0] = _binomial[1] = 1;    // C(1, 0), C(1, 1)
+		uint u = 1;
+		_two_to_k[0] = _two_to_knm1[0] = u;
+		for (uint k = 1; k <= n; ++k)
+		{
+			u = (u << 1) % _N;
+			_two_to_k[k] = u;
+			_two_to_knm1[k] = 1;
+		}
+		_two_to_kn = (uint[])_two_to_k.Clone();
+		_n = 1;
+	}
+
+	// Move to next n
+	private void step()
+	{
+		_n += 1;
+		// Update binomials
+		{
+			var tmp = _binomial;
+			_binomial = _binomial_nm1;
+			_binomial_nm1 = tmp;
+		}
+		_binomial[_n] = 1;
+		for (uint k = _n - 1; k > 0; --k)
+		{
+			uint b = _binomial_nm1[k] + _binomial_nm1[k - 1];
+			if (b >= _N)
+				b -= _N;
+			_binomial[k] = b;
+		}
+		_binomial[0] = 1;
+
+		// Update powers of 2
+		var old = _two_to_knm1;
+		_two_to_knm1 = _two_to_kn;
+		_two_to_kn = old;
+		for (uint k = 0; k < _two_to_kn.Length; ++k)
+			_two_to_kn[k] = SimpleNT.mul_mod32(_two_to_knm1[k], _two_to_k[k], _N);
+
+		// Update h(n)
+		uint hsum = 0;
+		for (int k = 1; k < _n; ++k)
+		{
+			hsum += SimpleNT.mul_mod32(_binomial[k], SimpleNT.mul_mod32(_two_to_knm1[_n - k], _h[k], _N), _N);
+			if (hsum >= _N)
+				hsum -= _N;
+		}
+		uint Dn = _two_to_knm1[_n];
+		if (Dn >= hsum)
+			_h[_n] = Dn - hsum;
+		else
+			_h[_n] = _N + Dn - hsum;
+
+		// Update S(n)
+		hsum = 0;
+		for (int k = 1; k < _n; ++k)
+		{
+			hsum += SimpleNT.mul_mod32(SimpleNT.mul_mod32(_binomial_nm1[k - 1], _S[k], _N), _h[_n - k], _N);
+			if (hsum >= _N)
+				hsum -= _N;
+		}
+		hsum += _h[_n];
+		if (hsum >= _N)
+			hsum -= _N;
+		_S[_n] = hsum;
+	}
+
+	uint calc(uint n)
+	{
+		while (_n < n)
+			step();
+		return _S[n];
+	}
+
+	public static uint[] solve(uint[] queries, uint modulus)
+	{
+		int[] order = Enumerable.Range(0, queries.Length).ToArray<int>();
+		Array.Sort(order, (a, b) => queries[a].CompareTo(queries[b]));
+		var sln = new Solution(queries[order[order.Length - 1]], modulus);
+		uint[] ret = new uint[queries.Length];
+		foreach (var v in order)
+			ret[v] = sln.calc(queries[v]);
+		return ret;
+	}
+
+	public static void Main(string[] args)
+	{
+		int T = Convert.ToInt32(Console.ReadLine());
+		uint[] queries = new uint[T];
+		for (int k = 0; k < T; ++k)
+			queries[k] = Convert.ToUInt32(Console.ReadLine());
+		var ret = solve(queries, 1000000000 + 7);
+		foreach (var v in ret)
+			Console.WriteLine(v);
+	}
+
+}

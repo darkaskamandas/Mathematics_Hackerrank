@@ -1,0 +1,129 @@
+#include <cstdio>
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <string>
+#include <set>
+#include <map>
+#include <ctime>
+#include <cstring>
+#include <cassert>
+#include <bitset>
+#include <sstream>
+#include <queue>
+
+#define pb push_back
+#define mp make_pair
+#define fs first
+#define sc second
+#define sz(a) ((int) (a).size())
+#define eprintf(...) fprintf(stderr, __VA_ARGS__)
+
+using namespace std;
+
+typedef long long int64;
+typedef long double ldb;
+
+const long double eps = 1e-9;
+const int inf = (1 << 30) - 1;
+const long long inf64 = ((long long)1 << 62) - 1;
+const long double pi = acos(-1);
+
+template <class T> T sqr (T x) {return x * x;}
+template <class T> T abs (T x) {return x < 0 ? -x : x;}
+
+const int P = 1000 * 1000 * 1000 + 7;
+
+int sum (int a, int b) {
+    return (a + b) % P;
+}
+
+int mult (int a, int b) {
+    return (a * (long long) b) % P;
+}
+
+int myPow (int a, int n) {
+    if (n == 0) {
+        return 1;
+    }
+
+    int res = myPow(a, n / 2);
+    res = mult(res, res);
+    if (n % 2 == 1) {
+        res = mult(res, a);
+    }
+
+    return res;
+}
+
+int inv (int a) {
+    return myPow(a, P - 2);
+}
+
+const int magic = 1000 * 1000 + 100;
+
+int fact[magic], factInv[magic], numInv[magic];
+int helper[magic], sumSuf[magic];
+
+int binomial (int n, int k) {
+    return mult(fact[n], mult(factInv[k], factInv[n - k]));
+}
+
+int main () {
+//  ios_base::sync_with_stdio(0);
+//  freopen("input.txt", "rt", stdin);
+//  freopen("output.txt", "wt", stdout);
+
+    for (int i = 1; i < magic; ++i) {
+        numInv[i] = inv(i);
+    }
+
+    fact[0] = 1;
+    for (int i = 1; i < magic; ++i) {
+        fact[i] = mult(fact[i - 1], i);
+    }
+    factInv[0] = 1;
+    for (int i = 1; i < magic; ++i) {
+        factInv[i] = mult(factInv[i - 1], numInv[i]);
+    }
+
+    int tc;
+    cin >> tc;
+    for (int ti = 0; ti < tc; ++ti) {
+        long long x, y, z;
+        cin >> x >> y >> z;
+        
+        if (x > y) {
+            swap(x, y);
+        }
+
+        int binomialY = 1;
+        for (int i = 0; i <= x; ++i) {
+            helper[i] = mult(binomialY, binomial(x, i));
+            if (i < x) {
+                binomialY = mult(binomialY, mult((y - i) % P, numInv[i + 1]));
+            }
+        }
+        
+        sumSuf[x + 1] = 0;
+        for (int i = x; i >= 0; --i) {
+            sumSuf[i] = sum(sumSuf[i + 1], helper[i]);
+        }
+        
+        int binomialZ = 1;
+        int res = 0;
+        for (int k = 1; k <= min(z, x); ++k) {
+            if (k > 1) {
+               binomialZ = mult(binomialZ, mult((z - k + 1) % P, numInv[k - 1]));
+            }
+
+            res = sum(res, mult(binomialZ, sumSuf[k]));
+        }
+    
+        cout << res << "\n";
+    }
+
+
+    return 0;
+}

@@ -1,0 +1,66 @@
+using System;
+using System.IO;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            StreamReader sr = new StreamReader(Console.OpenStandardInput());
+            StreamWriter sw = new StreamWriter(Console.OpenStandardOutput());
+            int t = Convert.ToInt32(sr.ReadLine());
+
+            for (int i = 0; i < t; i++)
+            {
+                string[] input = sr.ReadLine().Split(' ');
+                long d = Convert.ToInt64(input[0]);
+                long p = Convert.ToInt64(input[1]);
+                sw.WriteLine(Cal(d, p));
+            }
+
+            sw.Flush();
+        }
+
+        static long Cal(long d, long p)
+        {
+            if (d < 0)
+                return 0;
+
+            if (d == 0 && p == 0)
+                return 1;
+
+            long sqr = d * d + 4 * p;
+            if (sqr < 0) return 0;
+
+            long sqrt = Sqrt(sqr);
+            long x1 = (-d - sqrt) / 2;
+
+            if (x1 * (x1 + d) != p)
+                return 0;
+
+            if (sqrt == 0 || d == 0)
+                return 2;
+            else
+                return 4;
+        }
+
+        static long Sqrt(long n)
+        {
+            if (n == 0) return 0;
+            long sqrt = (int)(Math.Sqrt(n));
+            long t = n / sqrt;
+
+            while (true)
+            {
+                if (sqrt * sqrt <= n && (sqrt + 1) * (sqrt + 1) > n)
+                    break;
+
+                sqrt = (sqrt + t) / 2;
+                t = n / sqrt;
+            }
+
+            return sqrt;
+        }
+    }
+}

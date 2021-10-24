@@ -1,0 +1,194 @@
+using System;
+using System.Collections.Generic;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        static long[,] Dp;
+
+        static void Main(string[] args)
+        {
+            int t = Convert.ToInt32(Console.ReadLine());
+
+            for (int i = 0; i < t; i++)
+            {
+                string[] input = Console.ReadLine().Split(' ');
+                int n = Convert.ToInt32(input[0]);
+                int m = Convert.ToInt32(input[1]);
+                int k = Convert.ToInt32(input[2]);
+                int mod = Convert.ToInt32(input[3]);
+                Console.WriteLine(Solve(n, m, k, mod));
+            }
+        }
+
+        static void Init(long n, int m, int k, long p)
+        {
+            int max = m * k;
+            long[,] cMatrix = new long[max + 1, k + 1];
+
+            for (int i = 0; i <= max; i++)
+                cMatrix[i, 0] = 1;
+
+            for (int i = 0; i <= k; i++)
+                cMatrix[i, i] = 1;
+
+            for (int i = 2; i <= max; i++)
+            {
+                for (int j = 1; j * 2 <= i && j <= k; j++)
+                {
+                    cMatrix[i, j] = (cMatrix[i - 1, j - 1] + cMatrix[i - 1, j]) % p;
+                    if (i - j <= k)
+                        cMatrix[i, i - j] = cMatrix[i, j];
+                }
+            }
+
+            Dp = new long[max + 1, m + 1];
+
+            for(int i = 0; i <= m; i++)
+                Dp[0, i] = 1;
+
+            for (int i = 1; i <= max; i++)
+            {
+                for (int j = 1; j <= m; j++)
+                {
+                    long result = Dp[i - 1, j];
+                    result -= i > k ? cMatrix[i - 1, k] * Dp[i - k - 1, j - 1] % p : 0;
+                    Dp[i, j] = (result * j % p + p) % p;
+                }
+            }
+        }
+
+        static long Solve(int n, int m, int k, long mod)
+        {
+            Init(n, m, k, mod);
+            long result = 0;
+            int max = m * k;
+            int outEdge = n - m;
+            if (outEdge == 0) return 1 % mod;
+            int end = Math.Min(max, outEdge);
+            long[] cmnValues = Cmn(n - m - 1, max, mod);
+            long power = PowerMod(n - m, outEdge - end, mod);
+
+            for (int d = end; d > 0; d--)
+            {
+                long mul = cmnValues[d - 1];
+                result += Dp[d, m] * power % mod * mul % mod;
+                power = power * (n - m) % mod;
+                if (power == 0) break;
+            }
+
+            cmnValues = Cmn(n, m, mod);
+            result = result % mod * cmnValues[m] % mod;
+            return result;
+        }
+
+        static long[] Cmn(long m, long n, long mod)
+        {
+            n = Math.Min(m, n);
+            long[] factors = GetFactors(mod);
+            long[] powers = new long[factors.Length];
+            long[] cPowers = new long[factors.Length];
+            long[] ups = new long[factors.Length];
+
+            for (int i = 0; i < factors.Length; i++)
+            {
+                long p = factors[i], power = 1;
+                while (mod % p == 0) { mod /= p; power *= p; }
+                powers[i] = power;
+                ups[i] = cPowers[i] = 1;
+            }
+
+            long[] result = new long[n + 1];
+            result[0] = 1;
+
+            for (long i = 0; i < n; i++)
+            {
+                long lcm = 1, cResult = 0;
+
+                for (int j = 0; j < factors.Length; j++)
+                {
+                    long p = factors[j], power = powers[j];
+                    long mulUp = m - i, mulDown = i + 1;
+
+                    while (mulUp % p == 0) { mulUp /= p; cPowers[j] *= p; }
+                    while (mulDown % p == 0) { mulDown /= p; cPowers[j] /= p; }
+
+                    ups[j] = ups[j] * mulUp % power * Inv(mulDown, power) % power;
+                    cResult = Crt(power, ups[j] * cPowers[j] % power, lcm, cResult);
+                    lcm *= power;
+                }
+
+                result[i + 1] = cResult;
+            }
+
+            return result;
+        }
+
+        public static long Crt(long p1, long m1, long p2, long m2)
+        {
+            long result = m2 - m1;
+            long inv = Inv(p1, p2);
+            result = result * inv % p2;
+            result = result * p1 + m1;
+
+            if (result < 0)
+                result += p1 * p2;
+
+            return result;
+        }
+
+        public static long[] GetFactors(long n)
+        {
+            List<long> result = new List<long>();
+            for (long i = 2; i * i <= n; i++)
+            {
+                if (i * i > n) break;
+
+                if (n % i == 0)
+                {
+                    result.Add(i);
+                    while (n % i == 0) { n /= i; }
+                }
+            }
+
+            if (n != 1) result.Add(n);
+            return result.ToArray();
+        }
+
+        static long PowerMod(long a, long power, long n)
+        {
+            long mod = 1; a %= n;
+
+            while (power != 0)
+            {
+                if ((power & 1) == 1)
+                    mod = mod * a % n;
+
+                a = a * a % n;
+                power >>= 1;
+            }
+
+            return mod;
+        }
+
+        public static long Inv(long e, long f)
+        {
+            long x2 = 0, x3 = f, y2 = 1, y3 = e, q, t2, t3;
+            while (true)
+            {
+                if (y3 == 0) return 0;
+                if (y3 == 1)
+                {
+                    if (y2 < 0) y2 += f;
+                    return y2;
+                }
+                q = x3 / y3;
+                t2 = x2 - q * y2;
+                t3 = x3 - q * y3;
+                x2 = y2; x3 = y3;
+                y2 = t2; y3 = t3;
+            }
+        }
+    }
+}

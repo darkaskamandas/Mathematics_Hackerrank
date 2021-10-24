@@ -1,0 +1,60 @@
+// shik {{{
+#include <bits/stdc++.h>
+#include <unistd.h>
+#define SZ(x) ((int)(x).size())
+#define ALL(c) begin(c),end(c)
+#define REP(i,n) for ( int i=0; i<(int)(n); i++ )
+#define REP1(i,a,b) for ( int i=(int)(a); i<=(int)(b); i++ )
+#define FOR(it,c) for ( auto it=(c).begin(); it!=(c).end(); it++ )
+#define MP make_pair
+#define PB push_back
+using namespace std;
+typedef pair<int,int> PII;
+typedef vector<int> VI;
+typedef long long LL;
+
+void RI() {}
+
+template<typename... T>
+void RI( int& head, T&... tail ) {
+    scanf("%d",&head);
+    RI(tail...);
+}
+// }}}
+
+void solve( LL k ) {
+    int ans=0,c[3]={1,1,1};
+    while ( k>0 ) {
+        ans++;
+        if ( c[0]<=k ) {
+            k-=c[0];
+            c[0]++;
+            //putchar('a');
+        } else if ( c[1]<=k ) {
+            k-=c[1];
+            if ( c[1]==1 ) {
+                c[0]=2;
+                c[1]=2;
+            } else if ( c[1]==2 ) {
+                c[0]=3;
+            }
+            //putchar('b');
+        } else if ( c[2]<=k ) {
+            k-=c[2];
+            assert(k==0);
+            //putchar('c');
+        }
+    }
+    printf("%d\n",ans);
+}
+
+int main() {
+    int t;
+    RI(t);
+    while ( t-- ) {
+        LL k;
+        cin>>k;
+        solve(k);
+    }
+    return 0;
+}

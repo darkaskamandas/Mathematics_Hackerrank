@@ -1,0 +1,35 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+class Solution {
+    static void Main(String[] args) {
+        /* Enter your code here. Read input from STDIN. Print output to STDOUT. Your class should be named Solution */
+        int t = int.Parse(Console.ReadLine());
+        while(t-- > 0){
+           int n = int.Parse(Console.ReadLine());
+            if(n == 0){
+                Console.WriteLine(4);
+            } else {
+                long power = modPow(2,n+1,1000000007);
+                Console.WriteLine((power + 2) % 1000000007);
+            }
+        }
+    }
+    
+     public static long modPow(long a, long x, long p)
+    {
+        //calculates a^x mod p in logarithmic time.
+        long res = 1;
+        while (x > 0)
+        {
+            if (x % 2 != 0)
+            {
+                res = (res * a) % p;
+            }
+            a = (a * a) % p;
+            x /= 2;
+        }
+        return res;
+    }
+
+}

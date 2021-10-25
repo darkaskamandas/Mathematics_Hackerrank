@@ -1,0 +1,100 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+class Solution {
+
+    static void Main(String[] args) {
+                string[] tokens_n = Console.ReadLine().Split(' ');
+        int n = Convert.ToInt32(tokens_n[0]);
+        int q = Convert.ToInt32(tokens_n[1]);
+
+        bool[] hackoPos = new bool[] { false, false, true, false, true, true, false }; //7th goes to 0 because (7*n)%7 == 0
+        bool[][] matrix = new bool[n][];
+        //fill Matrix x = true, y = false
+        for(int i = 0; i< n; i++)
+        {
+            matrix[i] = new bool[n];
+            for(int j = 0; j< n; j++)
+            {
+                double hackNumber = Math.Pow((i + 1) * (j + 1), 2);
+                matrix[i][j] = hackoPos[Convert.ToInt32(hackNumber % 7)];
+            }
+        }
+
+
+        #region 90
+        int f90 = 0;
+        for(int i = 0; i< n; i++)
+        {
+            for(int j = 0; j< n; j++)
+            {
+                bool b = matrix[i][j];
+
+                int antiI = n - j - 1;
+                int antiJ = i;
+
+                bool antiB = matrix[antiI][antiJ];
+                if (b != antiB)
+                    f90 ++;
+            }
+        }
+
+        #endregion
+
+        #region 180
+        int f180 = 0;
+        for(int i = 0; i< n; i++)
+        {
+            for(int j = 0; j<n; j++)
+            {
+                bool b = matrix[i][j];
+
+                int antiI = n-1-i;
+                int antiJ = n-1-j;
+
+                bool antiB = matrix[antiI][antiJ];
+                if (b != antiB)
+                    f180 ++;
+            }
+        }
+        #endregion
+
+        #region 270
+
+        int f270 = 0;
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                bool b = matrix[i][j];
+
+                int antiI = j;
+                int antiJ = n - i - 1;
+
+                bool antiB = matrix[antiI][antiJ];
+                if (b != antiB)
+                    f270++;
+            }
+        }
+        #endregion
+
+        int[] numberOfChanges = new int[] { f90, f180, f270 }; //90, 180, 270
+
+
+
+        for (int a0 = 0; a0 < q; a0++)
+        {
+            int angle = Convert.ToInt32(Console.ReadLine());
+            angle %= 360;
+
+            angle /= 90;
+            angle--;
+            if (angle < 0)
+                Console.WriteLine(0);
+            else
+                Console.WriteLine(numberOfChanges[angle]);
+        }
+    }
+    
+}

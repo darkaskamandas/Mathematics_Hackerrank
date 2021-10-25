@@ -1,0 +1,32 @@
+using System;
+using System.IO;
+public class Solution {
+    public static void Main(string[] args) {
+        Console.ReadLine();
+        var sLine = Console.ReadLine();
+        var blocks = sLine.Split(new char[] {' '});
+        long[] values =  new long[blocks.Length];
+        long sum = 0;
+        for (int x = 0; x < blocks.Length; x++) {
+            values[x] = long.Parse(blocks[x]);
+            sum += values[x];
+        }
+        long p = 0;
+        long tmpMax = 0;
+        long pLast = 0;
+        for (int z = 0; z < values.Length; z++) {
+            p += (1+z) * values[z];
+        }
+        tmpMax = p;
+        pLast = tmpMax;
+        for (int x = 1; x < values.Length; x++) {
+            p = (pLast - sum) + values[x-1] * values.Length;
+            if (p > tmpMax)
+                 tmpMax = p;
+            pLast = p;
+        }
+        Console.WriteLine(tmpMax);
+    }
+    
+    
+}

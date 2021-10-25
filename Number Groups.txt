@@ -1,0 +1,17 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+class Solution {
+
+    static long sumOfGroup(int k) {
+        var n = (k - 1L) * k + 1L;
+        return (n + n + 2L * (k - 1L)) * k / 2L;
+    }
+
+    static void Main(String[] args) {
+        int k = Convert.ToInt32(Console.ReadLine());
+        long answer = sumOfGroup(k);
+        Console.WriteLine(answer);
+    }
+}

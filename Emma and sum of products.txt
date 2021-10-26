@@ -1,0 +1,197 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        public static void Main(String[] args)
+        {
+            StreamReader sr = new StreamReader(Console.OpenStandardInput());
+            StreamWriter sw = new StreamWriter(Console.OpenStandardOutput());
+            int n = Convert.ToInt32(sr.ReadLine());
+
+            long[] nums = new long[n];
+            string[] input = sr.ReadLine().Split(' ');
+
+            for (int i = 0; i < n; i++)
+                nums[i] = Convert.ToInt64(input[i]);
+
+            var result = GenTable(nums);
+            int q = Convert.ToInt32(sr.ReadLine());
+
+            for (int i = 0; i < q; i++)
+            {
+                int k = Convert.ToInt32(sr.ReadLine());
+                sw.WriteLine(result[result.Length - k - 1]);
+            }
+
+            sw.Flush();
+        }
+
+        static long[] GenTable(long[] nums)
+        {
+            List<long[]> polys = new List<long[]>();
+
+            for (int i = 0; i < nums.Length; i++)
+                polys.Add(new long[] { nums[i], 1 });
+
+            while (polys.Count > 1)
+            {
+                List<long[]> polysTmp = new List<long[]>();
+
+                for (int i = 0; i < polys.Count; i += 2)
+                {
+                    if (i == polys.Count - 1)
+                        polysTmp.Add(polys[i]);
+                    else
+                        polysTmp.Add(Mul(polys[i], polys[i + 1]));
+                }
+
+                polys = polysTmp;
+            }
+
+            return polys[0];
+        }
+
+        static int Mod = 100003;
+
+        #region FFT
+        public struct TranPara { public int Module, CModule, Root, Inv;        }
+
+        public static void FFT(long[] v, int size, bool inverse_mark, TranPara para)
+        {
+            int CModule = para.CModule;
+            int Module = para.Module;
+            int Root = para.Root;
+
+            if (inverse_mark)
+            {
+                for (int x = 1; x < size; x <<= 1)
+                {
+                    int x2 = x << 1;
+                    int root = (int)PowerMod(Root, CModule - CModule / x2, Module);
+                    long temp_root = 1;
+
+                    for (int t = 0; t < x; t++)
+                    {
+                        int upper = t + size;
+                        for (int i = t; i < upper; i += x2)
+                        {
+                            long a = v[i], b = v[i + x] * temp_root % Module;
+                            long c = a + b;
+                            v[i] = c >= Module ? c - Module : c;
+                            c = a - b;
+                            v[i + x] = c < 0 ? c + Module : c;
+                        }
+
+                        temp_root = temp_root * root % Module;
+                    }
+                }
+            }
+            else
+            {
+                for (int x = size >> 1; x > 0; x >>= 1)
+                {
+                    int x2 = x << 1;
+                    int root = (int)PowerMod(Root, CModule / x2, Module);
+                    long temp_root = 1;
+
+                    for (int t = 0; t < x; t++)
+                    {
+                        int upper = t + size;
+                        for (int i = t; i < upper; i += x2)
+                        {
+                            long a = v[i], b = v[i + x];
+                            long c = a + b;
+                            v[i] = c >= Module ? c - Module : c;
+                            c = (a - b) * temp_root % Module;
+                            v[i + x] = c < 0 ? c + Module : c;
+                        }
+
+                        temp_root = temp_root * root % Module;
+                    }
+                }
+            }
+        }
+
+        public static void FFT(long[] v1, long[] v2, TranPara para, int length)
+        {
+            FFT(v1, length, false, para);
+            FFT(v2, length, false, para);
+
+            for (int i = 0; i < length; i++)
+                v1[i] = v1[i] * v2[i] % para.Module;
+
+            FFT(v1, length, true, para);
+
+            int val = (int)PowerMod(length, para.Module - 2, para.Module);
+            for (int i = 0; i < length; ++i)
+                v1[i] = v1[i] * val % para.Module;
+        }
+
+        public static long[] Mul(long[] v1, long[] v2)
+        {
+            int length = 1;
+
+            while (length < v1.Length + v2.Length)
+                length += length;
+
+            long[] v10 = new long[length];
+            long[] v20 = new long[length];
+            long[] v11 = new long[length];
+            long[] v21 = new long[length];
+
+            Array.Copy(v1, v10, v1.Length);
+            Array.Copy(v1, v11, v1.Length);
+            Array.Copy(v2, v20, v2.Length);
+            Array.Copy(v2, v21, v2.Length);
+
+            TranPara para1 = new TranPara { Module = 2013265921, CModule = 16777216, Root = 21 };
+            FFT(v10, v20, para1, length);
+
+            TranPara para2 = new TranPara { Module = 2113929217, CModule = 16777216, Root = 254, Inv = 21 };
+            FFT(v11, v21, para2, length);
+
+            for (int i = 0; i < length; i++)
+            {
+                v10[i] = Crt(para1.Module, v10[i], para2.Module, v11[i], para2.Inv);
+                v10[i] %= Mod;
+            }
+
+            Array.Resize<long>(ref v10, v1.Length + v2.Length - 1);
+            return v10;
+        }
+
+        public static long Crt(long p1, long m1, long p2, long m2, long inv)
+        {
+            long result = m2 - m1 % p2;
+            result = result * inv % p2;
+
+            if (result < 0)
+                result += p2;
+
+            result = result * p1 + m1;
+            return result;
+        }
+
+        public static long PowerMod(long num, long power, long mod)
+        {
+            long modLast = num;
+            long result = 1;
+
+            while (power != 0)
+            {
+                if ((power & 1) == 1)
+                    result = (result * modLast) % mod;
+
+                modLast = (modLast * modLast) % mod;
+                power >>= 1;
+            }
+
+            return result;
+        }
+        #endregion
+    }
+}

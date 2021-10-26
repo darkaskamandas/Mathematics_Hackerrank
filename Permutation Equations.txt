@@ -1,0 +1,128 @@
+using System;
+
+namespace PermutationEquations
+{
+    class Program
+    {
+        private static int m = 1000000007;
+        private static int maxN = 200000;
+
+        static void Main(string[] args)
+        {
+            int T = Int32.Parse(Console.ReadLine());
+
+            var N = new int[T];
+            var L = new long[T];
+            var R = new long[T];
+            var outputs = new long[T];
+
+            #region Read Inputs
+
+            for (int i = 0; i < T; i++)
+            {
+                var line = Console.ReadLine().Split(' ');
+                N[i] = Int32.Parse(line[0]);
+                L[i] = Int64.Parse(line[1]);
+                R[i] = Int64.Parse(line[2]);
+            }
+
+            #endregion
+
+            var bigArray = new long[maxN + 1, 60];
+            var fact = new long[maxN + 1];
+
+            fact[1] = 1;
+
+            fact[2] = 1;
+            bigArray[2, 0] = 1;
+            bigArray[2, 1] = 1;
+
+            fact[3] = 2;
+
+            bigArray[3, 0] = fact[3] * 2;
+            bigArray[3, 1] = 1;
+            bigArray[3, 2] = 1;
+
+            for (int i = 4; i <= maxN; i++)
+            {
+                fact[i] = fact[i - 1] * (i - 1) % m;
+                bigArray[i, 0] = fact[i] * (i - 1) % m;
+                bigArray[i, 1] = (i - 2) * bigArray[i - 1, 1] % m;
+                for (int a = 2; a <= 59; a++)
+                {
+                    bigArray[i, a] = ((i - 2) * bigArray[i - 1, a] % m + bigArray[i - 1, a - 1]) % m;
+                }
+            }
+
+            for (int i = 0; i < T; i++)
+            {
+                outputs[i] = 0;
+
+                if (N[i] == 1)
+                {
+                    if (L[i] <= 1 && R[i] >= 1)
+                        outputs[i] = 1;
+                }
+                else
+                {
+                    int Llog = LowerPower(L[i]);
+                    int Rlog = UpperPower(R[i]);
+                    
+                    for (int j = Llog; j <= Rlog; j++)
+                    {
+                        outputs[i] += bigArray[N[i], j];
+                        outputs[i] %= m;
+                    }
+                }
+
+                Console.WriteLine(outputs[i]);
+            }
+        }
+
+        private static int LowerPower(long x)
+        {
+            if (x == 0)
+                return 0;
+
+            if (x == 1)
+                return 1;
+
+            int n = 0;
+
+            while (x != 1)
+            {
+                if (x % 2 == 0)
+                    x /= 2;
+                else
+                    x = (x + 1) / 2;
+
+                n++;
+            }
+
+            return n;
+        }
+
+        private static int UpperPower(long x)
+        {
+            if (x == 0)
+                return 0;
+
+            if (x == 1)
+                return 0;
+
+            int n = 0;
+
+            while (x != 1)
+            {
+                if (x % 2 == 0)
+                    x /= 2;
+                else
+                    x = (x - 1) / 2;
+
+                n++;
+            }
+
+            return n;
+        }
+    }
+}

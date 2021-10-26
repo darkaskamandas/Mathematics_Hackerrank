@@ -1,0 +1,274 @@
+using Boilerplate.IO;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+public class Solver
+{
+    private readonly StreamReader reader;
+    private readonly StreamWriter writer;
+
+    public Solver(StreamReader reader, StreamWriter writer)
+    {
+        this.reader = reader;
+        this.writer = writer;
+    }
+
+    public void Generate()
+    { }
+
+    static int pow(int m, long e, int mod)
+    {
+        var res = 1;
+        while (e > 0)
+        {
+            if ((e & 1) == 1)
+            {
+                res = (int)(1L * res * m % mod);
+            }
+            e >>= 1;
+            m = (int)(1L * m * m % mod);
+        }
+        return res % mod;
+    }
+
+    static int inverse_prime(int num, int prime)
+    {
+        return pow(num, prime - 2, prime);
+    }
+
+    public void Do()
+    {
+        const int MOD = 1000000007;
+
+        int a = reader.ReadInt();
+        int b = reader.ReadInt();
+        int q = reader.ReadInt();
+
+        const int MAX1LIMIT = 1005;
+        int MAX2LIMIT = Math.Max(MAX1LIMIT, 1000006);
+        var gs = new int[MAX2LIMIT + 1];
+        var tria = new int[MAX1LIMIT + 1][];
+        var res1 = new int[3][];
+        var prep = new int[MAX2LIMIT + 1];
+        for (int i = 0;i < 3;++i)
+            res1[i] = new int[MAX1LIMIT + 1];
+        gs[0] = 0; gs[1] = 1;
+        prep[1] = 1;
+        for (int i = 2; i <= MAX2LIMIT; ++i)
+        {
+            gs[i] = (int)((1L * a * gs[i - 1] % MOD + 1L * b * gs[i - 2]) % MOD);
+            prep[i] = (int)(1L * gs[i] * prep[i - 1] % MOD);
+        }
+
+        for (int i = 0; i <= MAX1LIMIT; ++i)
+            tria[i] = new int[MAX1LIMIT + 1];
+        tria[1][0] = 1; tria[1][1] = 1;
+        for (int i = 2; i <= MAX1LIMIT; ++i)
+        {
+            tria[i][0] = 1;
+            var r = 1;
+            for (int j = 1; j <= i ; ++j)
+            {
+                tria[i][j] = (int)(((1L * tria[i - 1][j - 1] * gs[i - j + 1] % MOD) * r % MOD + (1L * tria[i - 1][j] * gs[j - 1] % MOD) * b) % MOD);
+                r = (int)(1L * r * b % MOD);
+                //if (j == i)
+                //    tria[i][j] = 1;
+                //else
+                //{
+                //    tria[i][j] = (int)(1L * tria[i - 1][j] * gs[i] % MOD);
+                //    tria[i][j] = (int)(1L * tria[i][j] * inverse_prime(gs[i - j], MOD) % MOD);
+                //}
+            }
+        }
+        for (int i = 1; i <= MAX1LIMIT; ++i)
+        {
+            int sp = 0;
+            int sn = 0;
+            for (int j = 0; j <= i; ++j)
+            {
+                if ((((j - 1) >> 1) & 1) == 0)
+                {
+                    sn = (sn + tria[i][j]) % MOD;
+                    tria[i][j] = -tria[i][j];
+                }
+                else
+                    sp = (sp + tria[i][j]) % MOD;
+            }
+            if (sn == sp)
+                res1[1][i] = 1;
+            else if (sn > sp)
+                res1[2][i] = 1;
+            else
+                res1[0][i] = 1;
+        }
+        ///// DEBUG
+        //for (int i = 0; i <= 10; ++i)
+        //{
+        //    writer.Write(gs[i] + " ");
+        //}
+        //writer.WriteLine();
+        //for (int i = 1; i <= 10; ++i)
+        //{
+        //    for (int j = 0; j <= i; ++j)
+        //    {
+        //        var e = tria[i][j];
+        //        var c = 0;
+        //        while (e % b == 0)
+        //        {
+        //            e /= b;
+        //            ++c;
+        //        }
+        //        writer.Write(tria[i][j] + "(" + c + ") ");
+        //    }
+        //    writer.WriteLine();
+        //}        
+        ///// VERIFICATION
+        //for (int p = 1; p <= 10; ++p)
+        //{
+        //    for (int j = p + 1; j <= 30; ++j)
+        //    {
+        //        long sum = 0;
+        //        for (int h = 0; h <= p + 1; ++h)
+        //        {
+        //            long pw = 1;
+        //            for (int i = 1; i <= p; ++i)
+        //            {
+        //                pw *= gs[j - h];
+        //                pw %= MOD;
+        //            }
+        //            sum += 1L * tria[p + 1][h] * pw;
+        //            sum %= MOD;
+        //        }
+        //        if (sum != 0)
+        //        {
+        //            writer.WriteLine("BAD... " + p);
+        //            return;
+        //        }
+        //    }
+        //}
+        //writer.WriteLine("OK !!!");
+        ///
+        for (int j = 0; j < 3; ++j)
+            for (int i = 2;i <= MAX1LIMIT; ++i)            
+                res1[j][i] += res1[j][i - 1];
+        while (q-- > 0)
+        {
+            var t = reader.ReadInt();
+            if (t == 1)
+            {
+                int l = reader.ReadInt() + 1;
+                int r = reader.ReadInt() + 1;
+                writer.WriteLine("{0} {1} {2}", res1[0][r] - res1[0][l - 1], res1[2][r] - res1[2][l - 1], res1[1][r] - res1[1][l - 1]);
+            }
+            else
+            {
+                int p = reader.ReadInt();
+                int u = reader.ReadInt();
+                int v = reader.ReadInt();
+                var epx = (int)(1L * prep[v] * inverse_prime(prep[u - 1], MOD) % MOD);
+                long wp = 1L * p * (p + 1) * (p + 2) / 6;
+                int w = pow(b, wp, MOD - 1);
+                long phi = 1L * v * (v - 1) - 1L * (u - 1) * (u - 2) - 1L * p * (v - u + 1);
+                phi = Math.Abs(phi);
+                phi = (phi + w) % (MOD - 1);
+                writer.WriteLine(pow(epx, phi, MOD));
+            }
+        }
+    }
+}
+
+#region launch
+class Program
+{
+    static void Main(string[] args)
+    {
+        using (var writer = new FormattedStreamWriter(
+#if SOLVER_RUN_LOCAL
+"output.txt"
+#else 
+         Console.OpenStandardOutput()
+#endif
+))
+        {
+            using (var reader = new StreamReader(
+#if SOLVER_RUN_LOCAL
+"input.txt"
+#else 
+         Console.OpenStandardInput() 
+#endif
+))
+            {
+#if SOLVER_RUN_LOCAL
+                var stopw = new Stopwatch();
+                stopw.Start();
+#endif
+                new Solver(reader, writer).Do();
+#if SOLVER_RUN_LOCAL
+                stopw.Stop();
+                writer.WriteLine("> {0}ms", stopw.ElapsedMilliseconds);
+#endif
+            }
+        }
+    }
+}
+#endregion
+
+namespace Boilerplate.IO
+{
+    #region helpers
+    class FormattedStreamWriter : StreamWriter
+    {
+        public FormattedStreamWriter(Stream stream) : base(stream) { }
+        public FormattedStreamWriter(string filePath) : base(filePath) { }
+        public override IFormatProvider FormatProvider
+        {
+            get
+            {
+                return CultureInfo.InvariantCulture;
+            }
+        }
+    }
+    static class IOExtensions
+    {
+        public static string ReadString(this StreamReader reader)
+        {
+            return reader.ReadToken();
+        }
+        public static int ReadInt(this StreamReader reader)
+        {
+            return int.Parse(reader.ReadToken(), CultureInfo.InvariantCulture);
+        }
+        public static long ReadLong(this StreamReader reader)
+        {
+            return long.Parse(reader.ReadToken(), CultureInfo.InvariantCulture);
+        }
+        public static double ReadDouble(this StreamReader reader)
+        {
+            return double.Parse(reader.ReadToken(), CultureInfo.InvariantCulture);
+        }
+        public static decimal ReadDecimal(this StreamReader reader)
+        {
+            return decimal.Parse(reader.ReadToken(), CultureInfo.InvariantCulture);
+        }
+
+        static Queue<string> buffer = new Queue<string>(100);
+        static string ReadToken(this StreamReader reader)
+        {
+            while (buffer.Count == 0)
+            {
+                reader.ReadLine().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).ToList().ForEach((t) =>
+                {
+                    buffer.Enqueue(t);
+                });
+            } return buffer.Dequeue();
+        }
+    }
+    #endregion
+}

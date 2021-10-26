@@ -1,0 +1,126 @@
+using System;
+using System.IO;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        public static void Main(String[] args)
+        {
+            StreamReader sr = new StreamReader(Console.OpenStandardInput());
+            StreamWriter sw = new StreamWriter(Console.OpenStandardOutput());
+
+            int t = Convert.ToInt32(sr.ReadLine());
+
+            for (int i = 0; i < t; i++)
+            {
+                string[] input = sr.ReadLine().Split(' ');
+                long n = Convert.ToInt64(input[0]);
+                int a = Convert.ToInt32(input[1]);
+                long b = Convert.ToInt64(input[2]);
+                int m = Convert.ToInt32(input[3]);
+
+                Mod = m; b = ((b % Mod) + Mod) % Mod;
+                sw.WriteLine(Cal(n, a, b).ToString());
+            }
+
+            sw.Flush();
+        }
+
+        static int Mod = 1;
+
+        static long Cal(long n, long a, long b)
+        {
+            long[] values = new long[a + 2];
+            values[0] = a == 0 ? 1 : 0;
+
+            for (int i = 1; i < values.Length; i++)
+                values[i] = (values[i - 1] + PowerMod(i, a, Mod) * PowerMod(b, i, Mod)) % Mod;
+
+            if (n < values.Length)
+                return values[n];
+
+            var baseArray = new long[] { -b, 1 };
+            long[] sArray = new long[] { -1, 1 };
+
+            for (int i = 0; i <= a; i++)
+                sArray = Mul(sArray, baseArray);
+
+            var recursion = new long[sArray.Length - 1];
+            for(int i = 0; i < recursion.Length; i++)
+                recursion[i] = -sArray[i];
+
+            var power = PowerReplace(recursion, n);
+            long result = 0;
+
+            for (int i = 0; i < power.Length; i++)
+                result += (power[i] * values[i]) % Mod;
+                
+            return (result % Mod + Mod) % Mod;
+        }
+
+        static long PowerMod(long a, long power, long n)
+        {
+            long mod = 1; a %= n;
+
+            while (power != 0)
+            {
+                if ((power & 1) == 1)
+                    mod = mod * a % n;
+
+                a = (a * a) % n;
+                power >>= 1;
+            }
+
+            return mod;
+        }
+
+        public static long[] PowerReplace(long[] poly, long power)
+        {
+            long[] powerTable = new long[] { 0, 1 }, result = new long[] { 1 };
+
+            while (power != 0)
+            {
+                if ((power & 1) == 1)
+                {
+                    var mul = Mul(result, powerTable);
+                    result = Replace(mul, poly);
+                }
+
+                var mulP = Mul(powerTable, powerTable);
+                powerTable = Replace(mulP, poly);
+                power >>= 1;
+            }
+
+            return result;
+        }
+
+        static long[] Replace(long[] sArray, long[] rArray)
+        {
+            for (int i = sArray.Length - 1; i >= rArray.Length; i--)
+                for (int j = 0; j < rArray.Length; j++)
+                    sArray[i + j - rArray.Length] = (sArray[i + j - rArray.Length] + sArray[i] * rArray[j]) % Mod;
+
+            long[] result = new long[Math.Min(rArray.Length, sArray.Length)];
+
+            for (int i = 0; i < result.Length; i++)
+                result[i] = sArray[i] % Mod;
+
+            return result;
+        }
+
+        public static long[] Mul(long[] a, long[] b)
+        {
+            long[] result = new long[a.Length + b.Length - 1];
+
+            for (int i = 0; i < a.Length; i++)
+                for (int j = 0; j < b.Length; j++)
+                    result[i + j] += (a[i] * b[j]) % Mod;
+
+            for (int i = 0; i < result.Length; i++)
+                result[i] %= Mod;
+                
+            return result;
+        }
+    }
+}

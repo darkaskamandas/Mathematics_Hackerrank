@@ -1,0 +1,209 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        static long Mod = 1000000007;
+        static void Main(string[] args)
+        {
+            StreamReader sr = new StreamReader(Console.OpenStandardInput());
+            StreamWriter sw = new StreamWriter(Console.OpenStandardOutput());
+            int n = Convert.ToInt32(sr.ReadLine());
+            int[][] matrix = new int[n][];
+
+            for (int i = 0; i < n; i++)
+            {
+                matrix[i] = new int[n];
+                string input = sr.ReadLine();
+
+                for (int j = 0; j < n; j++)
+                    matrix[i][j] = Convert.ToInt32(input[j] - '0');
+            }
+
+            sw.WriteLine(Cal(matrix));
+            sw.Flush();
+        }
+
+        static long Cal(int[][] matrix)
+        {
+            int m = matrix.Length, n = matrix[0].Length;
+            var uBound = GenUBound(matrix);
+            var counter = GenCounter(uBound);
+            long contain = Contain(uBound);
+
+            foreach (var item in uBound)
+                Array.Reverse(item);
+
+            var counterRev = GenCounter(uBound);
+            Array.Reverse(matrix);
+            var uBoundRev = GenUBound(matrix);
+            var sumRev = GenSum(GenCounter(uBoundRev));
+
+            foreach (var item in uBoundRev)
+                Array.Reverse(item);
+
+            var sum = GenSum(GenCounter(uBoundRev));
+
+            long total = sum[m - 1][n - 1];
+            contain -= total;
+            long deviation = 0;
+
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < m; j++)
+                {
+                    long down = n - i - 2 >= 0 ? sum[n - i - 2][m - 1] : 0;
+                    long right = m - j - 2 >= 0 ? sum[n - 1][m - j - 2] : 0;
+                    long rightDown = n - i - 2 >= 0 && m - j - 2 >= 0 ? sum[n - i - 2][m - j - 2] : 0;
+                    deviation += counter[i][j] * (right + down - rightDown) % Mod;
+                }
+            }
+
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < m; j++)
+                {
+                    if (counterRev[i][j] == 0) continue;
+                    long leftUp = n - i - 2 >= 0 && m - j - 2 >= 0 ? sumRev[n - i - 2][m - j - 2] : 0;
+                    deviation -= counterRev[i][j] * leftUp % Mod;
+                }
+            }
+
+            long result = total * (total - 1) / 2 % Mod;
+            result -= contain + deviation;
+            return (result * 2 % Mod + Mod) % Mod;
+        }
+
+        static long[][] GenCounter(int[][] uBound)
+        {
+            int m = uBound.Length, n = uBound[0].Length;
+            long[][] counter = new long[m][];
+
+            for (int i = 0; i < m; i++)
+                counter[i] = new long[n];
+
+            for (int i = 0; i < m; i++)
+            {
+                var current = uBound[i];
+                int[] stack = new int[n];
+                int[] left = new int[n + 1];
+                int endIndex = -1;
+
+                for (int j = 0; j < n; j++)
+                {
+                    left[j] = j;
+
+                    while (endIndex >= 0 && current[j] <= current[stack[endIndex]])
+                    {
+                        left[j] = left[stack[endIndex]];
+                        endIndex--;
+                    }
+
+                    stack[++endIndex] = j;
+                    counter[i][j] = (j - left[j] + 1) * current[j];
+                    counter[i][j] += left[j] <= 0 ? 0 : counter[i][left[j] - 1];
+                }
+            }
+
+            return counter;
+        }
+
+        static long[][] GenSum(long[][] counter)
+        {
+            int m = counter.Length, n = counter[0].Length;
+ 
+            for (int i = 0; i < m; i++)
+                for (int j = 1; j < n; j++)
+                    counter[i][j] = (counter[i][j] + counter[i][j - 1]) % Mod;
+
+            for (int i = 1; i < m; i++)
+                for (int j = 0; j < n; j++)
+                    counter[i][j] = (counter[i][j] + counter[i - 1][j]) % Mod;
+
+            return counter;
+        }
+
+        static int[][] GenUBound(int[][] matrix)
+        {
+            int m = matrix.Length, n = matrix[0].Length;
+            int[][] upperBound = new int[m][];
+
+            for (int i = 0; i < m; i++)
+                upperBound[i] = new int[n];
+
+            upperBound[0] = matrix[0].Clone() as int[];
+
+            for (int i = 1; i < m; i++)
+                for (int j = 0; j < n; j++)
+                    if (matrix[i][j] == 1)
+                        upperBound[i][j] = upperBound[i - 1][j] + 1;
+
+            return upperBound;
+        }
+
+        static long Contain(int[][] uBound)
+        {
+            int m = uBound.Length, n = uBound[0].Length;
+            int[][] result = new int[m + 1][];
+
+            for (int i = 0; i <= m; i++)
+                result[i] = new int[n + 1];
+
+            for (int i = 0; i < m; i++)
+            {
+                var current = uBound[i];
+                int[] stack = new int[n];
+                int[] left = new int[n + 1];
+                int endIndex = -1;
+
+                for (int j = 0; j <= n; j++)
+                {
+                    int cHeight = j == n ? 0 : current[j];
+                    left[j] = j;
+
+                    while (endIndex >= 0 && cHeight < current[stack[endIndex]])
+                    {
+                        int height = current[stack[endIndex]];
+                        left[j] = left[stack[endIndex]];
+                        int width = j - left[stack[endIndex]];
+                        endIndex--;
+
+                        int mHeight = endIndex >= 0 ? Math.Max(cHeight, current[stack[endIndex]]) : cHeight;
+                        result[height][width]++;
+                        result[mHeight][width]--;
+                    }
+
+                    if (endIndex == -1 || cHeight > current[stack[endIndex]])
+                        stack[++endIndex] = j;
+                }
+            }
+
+            var cm3 = GenCmn(Math.Max(n, m) + 4, 3);
+            var cm4 = GenCmn(Math.Max(n, m) + 4, 4);
+            long total = 0;
+
+            for (int i = 1; i <= m; i++)
+                for (int j = 1; j <= n; j++)
+                    total += cm3[i + 2] * cm4[j + 3] % Mod * result[i][j] % Mod;
+
+            return total % Mod;
+        }
+
+        static long[] GenCmn(int n, int d)
+        {
+            long[] cmn = new long[n + 1];
+            cmn[d] = 1;
+
+            for (int i = d + 1; i < cmn.Length; i++)
+                cmn[i] = cmn[i - 1] * i / (i - d);
+
+            for (int i = 0; i < cmn.Length; i++)
+                cmn[i] %= Mod;
+
+            return cmn;
+        }
+    }
+}

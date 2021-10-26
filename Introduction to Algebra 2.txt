@@ -1,0 +1,1261 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Text;
+using System.Threading;
+
+namespace HR
+{
+    public class Solution
+    {
+        static bool Debug = false;
+
+        static string GlobalFolder = @"c:\FH\Temp\HackerRank\Mathematics";
+        static string ExampleFolder;
+        static string ExampleName;
+        static int CaseNumber;
+
+        static string strFileInput;
+        static string strFileExpectedOutput;
+        static string strFileOutput;
+
+        static StreamReader fileInput = null;
+        static StreamReader fileExpectedOutput = null;
+        static StreamWriter fileOutput = null;
+
+        public static string strLine;
+        static string[] strData;
+        static int ErrorCounter = 0;
+
+        public static Statistics Stat1 = new Statistics();
+        public static Statistics Stat2 = new Statistics();
+        public static uint mod67 = 1000007;
+        public static ulong mod97 = 1000000007;
+        public static uint mod63 = 100003;
+
+        //static Factorizer F1 = new Factorizer();
+
+        static Dictionary<string, long> dic = new Dictionary<string, long>();
+        static Dictionary<string, long> dicLongLong = new Dictionary<string, long>();
+
+        static Stopwatch sw = new Stopwatch();
+
+        static void Main(string[] args)
+        {
+            sw.Start();
+            SolveItA2();
+            //SolveMaP();
+            //Console.WriteLine("Time: " + sw.ElapsedMilliseconds.ToString());
+
+            //if (fileOutput != null)
+            //{
+            //    fileOutput.Close();
+            //}
+        }
+
+
+        #region Introduction to Algebra 2
+
+        public static void SolveItA2()
+        {
+            ExampleFolder = "Algebra";
+            ExampleName = "Introduction to Algebra 2";
+            CaseNumber = 99; // 99, 1
+            Debug = File.Exists(InputFile);
+
+            List<string> Magmas = new List<string>();
+            Magmas.Add("12");
+
+            Magmas.Add("2");
+            Magmas.Add("1 0");
+            Magmas.Add("0 0");
+            
+            Magmas.Add("3");
+            Magmas.Add("2 0 1");
+            Magmas.Add("1 2 0");
+            Magmas.Add("0 1 2");
+
+            Magmas.Add("8");
+            Magmas.Add("5 4 7 6 3 0 1 2");
+            Magmas.Add("6 5 4 7 0 1 2 3");
+            Magmas.Add("7 6 5 4 1 2 3 0");
+            Magmas.Add("4 7 6 5 2 3 0 1");
+            Magmas.Add("1 2 3 0 5 4 7 6");
+            Magmas.Add("0 1 2 3 4 5 6 7");
+            Magmas.Add("3 0 1 2 7 6 5 4");
+            Magmas.Add("2 3 0 1 6 7 4 5");
+
+            Magmas.Add("2");
+            Magmas.Add("0 0");
+            Magmas.Add("1 1");
+
+            Magmas.Add("2");
+            Magmas.Add("0 0");
+            Magmas.Add("0 1");
+
+            Magmas.Add("6");
+            Magmas.Add("2 4 0 5 1 3");
+            Magmas.Add("3 5 1 4 0 2");
+            Magmas.Add("0 1 2 3 4 5");
+            Magmas.Add("1 0 3 2 5 4");
+            Magmas.Add("5 3 4 1 2 0");
+            Magmas.Add("4 2 5 0 3 1");
+
+            Magmas.Add("2");
+            Magmas.Add("0 1");
+            Magmas.Add("1 0");
+
+            Magmas.Add("2");
+            Magmas.Add("1 0");
+            Magmas.Add("1 0");
+
+            Magmas.Add("3");
+            Magmas.Add("0 1 2");
+            Magmas.Add("0 1 2");
+            Magmas.Add("1 0 2");
+
+            Magmas.Add("3");
+            Magmas.Add("0 2 1");
+            Magmas.Add("2 1 0");
+            Magmas.Add("1 0 2");
+
+            Magmas.Add("2");
+            Magmas.Add("0 1");
+            Magmas.Add("0 1");
+
+            Magmas.Add("1");
+            Magmas.Add("0");
+
+            foreach (string str in Magmas)
+            {
+                Console.WriteLine(str);
+            }
+
+            return;
+
+            strLine = ReadLineInput();
+            int T = Convert.ToInt32(strLine);
+
+            for (int i = 0; i < T; i++)
+            {
+                strLine = ReadLineInput();
+                byte n = Convert.ToByte(strLine);
+
+                Magma M = new Magma(n);
+                for (int y = 0; y < n; y++)
+                {
+                    M.SetRow(y, ReadLineInput());
+                }
+
+                string strParameter = string.Format("n={0}", n);
+                strLine = M.MagicNumber.ToString();
+
+                //if (strLine == "1") WriteLineOutput(M.ToString() + " --> " + strLine);    
+                WriteLineOutput(M.ToString() + " --> " + strLine);
+                //Console.WriteLine(strLine + " - " + strParameter);
+
+                Stat1.AddString(strLine, 1);
+
+                //string strExpectedOutput = CheckOutput(strLine);
+                //if (strExpectedOutput != string.Empty)
+                //{
+                //    ErrorCounter++;
+                //    Console.WriteLine(string.Format("Fehler({0},{4}): Exp={1}, Res={2}, Params=({3})", i, strExpectedOutput, strLine, strParameter, ErrorCounter));
+                //}
+                //WriteLineOutput(strLine);
+            }
+
+            WriteLineOutput("");
+
+            //return;
+
+            Random r = new Random();
+            byte Power = 5;
+            Magma M2 = new Magma(Power, 2);
+
+            foreach (Magma M3 in M2.lstMagma)
+            {
+                strLine = M3.MagicNumber.ToString();
+                //WriteLineOutput(M3.ToString() + " --> " + strLine);
+
+                if (!dicLongLong.ContainsKey(strLine))
+                {
+                    WriteLineOutput(M3.ToString() + " --> " + strLine);
+                    dicLongLong.Add(strLine, 1);
+                }
+            }
+
+            int Exponent = Power * Power;
+            BigInteger Max = BigInteger.Pow(Power, Exponent) - 1;
+            BigInteger Start = 0; // Max - 1000000;
+            for (BigInteger i = Start; i <= Max; i++)
+            {
+                //int Rand = r.Next();
+                if (i % 100000 == 0) Console.WriteLine(i.ToString());
+                Magma M1 = new Magma(Power, 2);
+                //WriteLineOutput(M1.ToString() + " --> " + strLine);
+                strLine = M1.MagicNumber.ToString();
+                if (!dicLongLong.ContainsKey(strLine))
+                {
+                    WriteLineOutput(M1.ToString() + " --> " + strLine);
+                    dicLongLong.Add(strLine, 1);
+                }
+                Stat1.AddString(strLine, 1);
+            }
+        }
+
+        #endregion
+
+        #region Manasa and Pizza
+
+        public static void SolveMaP()
+        {
+            ExampleFolder = "Algebra";
+            ExampleName = "Manasa and Pizza";
+            CaseNumber = 1;  // 
+            Debug = File.Exists(InputFile);
+
+            strLine = ReadLineInput();
+            int N = Convert.ToInt32(strLine);
+
+            strLine = ReadLineInput();
+            strData = strLine.Split(' ');
+            ulong[] A = new ulong[N];
+            Set S = new Set();
+            ulong Sum = 0;
+            for (int i = 0; i < strData.Length; i++)
+            {
+                A[i] = Convert.ToUInt64(strData[i]);
+                S.Elements.Add((int)A[i]);
+                Sum += A[i];
+            }
+
+            List<Set> Powerset = S.PowerSet();
+            foreach (Set S1 in Powerset)
+            {
+                BigInteger Sum1 = S1.Sum;
+                BigInteger Sum2 = Sum - Sum1;
+                Stat1.AddBI(BigInteger.Abs(Sum1 - Sum2), 1);
+            }
+
+            strLine = "";
+            Console.WriteLine(strLine);
+
+            string strExpectedOutput = CheckOutput(strLine);
+            if (strExpectedOutput != string.Empty)
+            {
+                ErrorCounter++;
+                string strParameter = ""; // string.Format("I={0}", I);
+                Console.WriteLine(string.Format("Fehler({0}): Exp={1}, Res={2}, Params:({3})", -1, strExpectedOutput, strLine, strParameter));
+            }
+        }
+    
+        #endregion
+
+        #region ReadWrite
+
+        public static BigInteger BIConvert(string strNumber)
+        {
+            BigInteger N;
+            bool b = true;
+            b = BigInteger.TryParse(strNumber, out N);
+            return N;
+        }
+
+        public static ulong ConvertString2Long(string Number, ulong m)
+        {
+            ulong Result = 0;
+
+            for (int i = 0; i < Number.Length; i++)
+            {
+                char c = Number[i];
+                ulong Digit = (ulong)(c - '0');
+                Result = ((Result * 10) + Digit) % m;
+            }
+
+            return Result;
+        }
+
+        static string InputFile
+        {
+            get
+            {
+                strFileInput = GlobalFolder + @"\" + ExampleFolder + @"\" + ExampleName + @"\";
+                string CaseName = "Input";
+                if (CaseNumber >= 0)
+                {
+                    CaseName += "%" + CaseNumber.ToString();
+                }
+                strFileInput += CaseName + ".txt";
+
+                return strFileInput;
+            }
+        }
+
+        static string ExpectedOutput
+        {
+            get
+            {
+                strFileInput = GlobalFolder + @"\" + ExampleFolder + @"\" + ExampleName + @"\";
+                string CaseName = "ExpectedOutput";
+                if (CaseNumber >= 0)
+                {
+                    CaseName += "%" + CaseNumber.ToString();
+                }
+                strFileInput += CaseName + ".txt";
+
+                return strFileInput;
+            }
+        }
+
+        static string OutputFile
+        {
+            get
+            {
+                strFileInput = GlobalFolder + @"\" + ExampleFolder + @"\" + ExampleName + @"\";
+                string CaseName = "Output";
+                if (CaseNumber >= 0)
+                {
+                    CaseName += "%" + CaseNumber.ToString();
+                }
+                strFileInput += CaseName + ".txt";
+
+                return strFileInput;
+            }
+        }
+
+        static string ReadLineInput()
+        {
+            string strLine;
+            if (Debug)
+            {
+                if (fileInput == null)
+                {
+                    string strFileInput = InputFile;
+                    fileInput = new StreamReader(strFileInput);
+                }
+                strLine = fileInput.ReadLine();
+            }
+            else
+            {
+                strLine = Console.ReadLine();
+            }
+
+            if (!string.IsNullOrEmpty(strLine))
+            {
+                strLine = strLine.TrimEnd();
+            }
+
+            return strLine;
+        }
+
+        static string CheckOutput(string strResult)
+        {
+            string strLine = ReadLineExpectedOutput();
+            //string[] strData = strLine.Split(' ');
+            //string strResultExpected = strData[0];
+            string strResultExpected = strLine; //.TrimEnd();
+
+            //Stat1.AddString(strResultExpected, 1);
+
+            bool Result = (strResult == strResultExpected);
+            if (Result)
+            {
+                return string.Empty;
+            }
+            else
+            {
+                return strResultExpected;
+            }
+        }
+
+        static string ReadLineExpectedOutput()
+        {
+            if (File.Exists(ExpectedOutput))
+            {
+                if (fileExpectedOutput == null)
+                {
+                    fileExpectedOutput = new StreamReader(ExpectedOutput);
+                }
+                return fileExpectedOutput.ReadLine();
+            }
+            return string.Empty;
+        }
+
+        static void WriteLineOutput(string strLine, bool last = false)
+        {
+            if (File.Exists(OutputFile))
+            {
+                if (fileOutput == null)
+                {
+                    fileOutput = new StreamWriter(OutputFile);
+                }
+                fileOutput.WriteLine(strLine);
+                Console.WriteLine(strLine);
+            }
+            else
+            {
+                Console.WriteLine(strLine);
+            }
+        }
+
+        #endregion
+    }
+
+    #region Magma
+
+    public class Magma
+    {
+        byte n;
+        byte[] arrElements;
+        byte[,] arrData;
+
+        bool[] arrPermutationRows;      // bijective
+        bool[] PermutatioColumns;       // bijective
+        bool PermutationRow;
+        bool PermutationColumn;
+        bool Permutation;
+
+        bool IdemPotence;
+        bool Abelian;
+        bool Associativity;
+
+        bool LeftIdentity;
+        bool RightIdentity;
+        byte ElemLeftIdentity;
+        byte ElemRightIdentity;
+
+        bool RackCondition1;
+
+        bool StopRecursion;
+        public List<Magma> lstMagma = new List<Magma>();
+
+        public bool Identity
+        {
+            get
+            {
+                return this.LeftIdentity && this.RightIdentity;
+            }
+        }
+
+        public bool Quasigroup
+        {
+            get
+            {
+                return this.Permutation;
+            }
+        }
+
+        public bool Loop
+        {
+            get
+            {
+                return this.Quasigroup && this.Identity;
+            }
+        }
+
+        public bool Semigroup
+        {
+            get
+            {
+                return this.Associativity;
+            }
+        }
+
+        public bool Monoid
+        {
+            get
+            {
+                return this.Semigroup && this.Identity;
+            }
+        }
+
+        public bool Group
+        {
+            get
+            {
+                return this.Monoid && this.Permutation;
+            }
+        }
+
+        public bool AbelianGroup
+        {
+            get
+            {
+                return this.Abelian && this.Group;
+            }
+        }
+
+        public bool Rack
+        {
+            get
+            {
+                return this.RackCondition1 && this.PermutationRow;
+            }
+        }
+
+        public bool Quandle
+        {
+            get
+            {
+                return this.IdemPotence && this.Rack;
+            }
+        }
+
+
+        public byte[] Elements
+        {
+            get
+            {
+                return arrElements;
+            }
+            set
+            {
+                arrElements = value;
+            }
+        }
+
+        public byte[,] Data
+        {
+            get
+            {
+                return arrData;
+            }
+            set
+            {
+                arrData = value;
+            }
+        }
+
+        public byte this[int i, int j]
+        {
+            get
+            {
+                return this.Data[i, j];
+            }
+            set
+            {
+                this.Data[i, j] = value;
+            }
+        }
+
+        public bool[] PermutationRows
+        {
+            get
+            {
+                return arrPermutationRows;
+            }
+            set
+            {
+                arrPermutationRows = value;
+            }
+        }
+
+        public Magma(byte n)
+        {
+            this.Init(n);
+        }
+
+        public Magma(byte n, BigInteger b)
+        {
+            this.Init(n);
+
+            for (int Row = 0; Row < this.n; Row++)
+            {
+                for (int Column = 0; Column < this.n; Column++)
+                {
+                    byte t = (byte)(b % n);
+                    this[Row, Column] = t;
+                    b /= n;
+                }
+            }
+        }
+
+        public Magma(byte n, int Method = 1)
+        {
+            this.Init(n);
+
+            switch (Method)
+            {
+                case 1:
+                    Random R = new Random();
+                    for (int Row = 0; Row < this.n; Row++)
+                    {
+                        List<byte> lst = new List<byte>();
+                        for (byte Column = 0; Column < this.n; Column++)
+                        {
+                            lst.Add(Column);
+                        }
+
+                        for (int Column = 0; Column < this.n; Column++)
+                        {
+                            int Index = R.Next(lst.Count);
+                            this[Row, Column] = lst[Index];
+                            lst.RemoveAt(Index);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    StopRecursion = false;
+                    this.CreateLatinSquare(0, 0);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        private void CreateLatinSquare(byte Row, byte Column)
+        {
+            if ((Row < this.n) && (Row < this.n))
+            {
+                for (byte i = 0; i < this.n && !StopRecursion; i++)
+                {
+                    bool Found = false;
+                    for (int x = 0; x < Column; x++)
+                    {
+                        if (this[Row, x] == i)
+                        {
+                            Found = true;
+                            break;
+                        }
+                    }
+
+                    //for (int y = 0; y < Row; y++)
+                    //{
+                    //    if (this[y, Column] == i)
+                    //    {
+                    //        Found = true;
+                    //        break;
+                    //    }
+                    //}
+
+                    if (!Found)
+                    {
+                        this[Row, Column] = i;
+                        if (Column < this.n - 1)
+                        {
+                            byte c = Column;
+                            CreateLatinSquare(Row, ++c);
+                        }
+                        else
+                        {
+                            byte r = Row;
+                            CreateLatinSquare(++r, 0);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                lstMagma.Add(this.Clone());
+                if (lstMagma.Count == 10000000)
+                {
+                    this.StopRecursion = true;
+                }
+                //return;
+            }
+        }
+
+        private void Init(byte n)
+        {
+            this.n = n;
+            this.Elements = new byte[n];
+            for (byte i = 0; i < this.n; i++)
+            {
+                this.Elements[i] = i;
+            }
+            this.Data = new byte[n, n];
+            this.InitProperties();
+        }
+
+        private void InitProperties()
+        {
+            this.PermutationRows = new bool[n];
+            this.PermutatioColumns = new bool[n];
+
+            this.PermutationRow = true;
+            this.PermutationColumn = true;
+            this.Permutation = true;
+
+            this.IdemPotence = true;
+            this.Abelian = true;
+            this.Associativity = true;
+
+            this.RackCondition1 = true;
+        }
+
+        public void SetRow(int Row, string strLine)
+        {
+            string[] strData = strLine.Split(' ');
+            for (int Column = 0; Column < strData.Length; Column++)
+            {
+                byte value = Convert.ToByte(strData[Column]);
+                this[Row, Column] = value;
+            }
+        }
+
+        public Magma Clone()
+        {
+            //Magma MagmaClone = (Magma)this.MemberwiseClone();
+            Magma MagmaClone = new Magma(this.n);
+            Array.Copy(this.Elements, MagmaClone.Elements, this.Elements.Length);
+            Array.Copy(this.Data, MagmaClone.Data, this.Data.Length);
+            return MagmaClone;
+        }
+
+
+        public int MagicNumber
+        {
+            get
+            {
+                this.InitProperties();
+
+                this.CheckIdemPotence();
+                this.CheckAbelian();
+                this.CheckPermutationRows();
+                this.CheckPermutationColumns();
+                this.CheckLeftRightIdentity();
+                this.CheckAssociativity();
+                this.CheckRack();
+
+                int S = 0;
+                if (this.Quasigroup) S += 1;
+                if (this.Loop) S += 2;
+                if (this.Semigroup) S += 4;
+                if (this.Monoid) S += 8;
+                if (this.Group) S += 16;
+                if (this.AbelianGroup) S += 32;
+                if (this.Rack) S += 64;
+                if (this.Quandle) S += 128;
+
+                return S;
+            }
+        }
+
+        private void CheckIdemPotence()
+        {
+            this.IdemPotence = true;
+            for (int Row = 0; Row < this.n; Row++)
+            {
+                if (this[Row, Row] != this.Elements[Row])
+                {
+                    this.IdemPotence = false;
+                    return;
+                }
+            }
+        }
+
+        private void CheckAbelian()
+        {
+            this.Abelian = true;
+            for (int Row = 0; Row < this.n; Row++)
+            {
+                for (int Column = 0; Column < this.n; Column++)
+                {
+                    if (this[Row, Column] != this[Column, Row])
+                    {
+                        this.Abelian = false;
+                        return;
+                    }
+                }
+            }
+        }
+
+        private void CheckPermutationRows()
+        {
+            for (int Row = 0; Row < this.n; Row++)
+            {
+                this.PermutationRows[Row] = true;
+
+                Dictionary<byte, byte> dicRow = new Dictionary<byte, byte>();
+                for (int Columns = 0; Columns < this.n; Columns++)
+                {
+                    byte value = this[Row, Columns];
+                    if (dicRow.ContainsKey(value))
+                    {
+                        this.PermutationRows[Row] = false;
+                        this.PermutationRow = false;
+                        this.Permutation = false;
+                    }
+                    else
+                    {
+                        dicRow.Add(value, 0);
+                    }
+                }
+            }
+        }
+
+        private void CheckPermutationColumns()
+        {
+            for (int Column = 0; Column < this.n; Column++)
+            {
+                this.PermutatioColumns[Column] = true;
+
+                Dictionary<byte, byte> dicRow = new Dictionary<byte, byte>();
+                for (int Row = 0; Row < this.n; Row++)
+                {
+                    byte value = this[Row, Column];
+                    if (dicRow.ContainsKey(value))
+                    {
+                        this.PermutatioColumns[Column] = false;
+                        this.PermutationColumn = false;
+                        this.Permutation = false;
+                    }
+                    else
+                    {
+                        dicRow.Add(value, 0);
+                    }
+                }
+            }
+        }
+
+        private void CheckLeftRightIdentity()
+        {
+            for (byte Row = 0; Row < this.n; Row++)
+            {
+                this.LeftIdentity = true;
+                for (byte Column = 0; Column < this.n; Column++)
+                {
+                    if (this[Row, Column] != this.Elements[Column])
+                    {
+                        this.LeftIdentity = false;
+                    }
+                }
+                if (this.LeftIdentity)
+                {
+                    this.ElemLeftIdentity = Row;
+                    break;
+                }
+            }
+
+            for (byte Column = 0; Column < this.n; Column++)
+            {
+                this.RightIdentity = true;
+                for (byte Row = 0; Row < this.n; Row++)
+                {
+                    if (this[Row, Column] != this.Elements[Row])
+                    {
+                        this.RightIdentity = false;
+                    }
+                }
+                if (this.RightIdentity)
+                {
+                    this.ElemRightIdentity = Column;
+                    break;
+                }
+            }
+        }
+
+        private void CheckAssociativity()
+        {
+            this.Associativity = true;
+            for (int x = 0; x < this.n; x++)
+            {
+                for (int y = 0; y < this.n; y++)
+                {
+                    for (int z = 0; z < this.n; z++)
+                    {
+                        byte xy = this[x, y];
+                        byte xy_z = this[xy, z];
+
+                        byte yz = this[y, z];
+                        byte x_yz = this[x, yz];
+
+                        if (xy_z != x_yz)
+                        {
+                            this.Associativity = false;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CheckRack()
+        {
+            this.RackCondition1 = true;
+            for (int x = 0; x < this.n; x++)
+            {
+                for (int y = 0; y < this.n; y++)
+                {
+                    for (int z = 0; z < this.n; z++)
+                    {
+                        byte yz = this[y, z];
+                        byte x_yz = this[x, yz];
+
+                        byte xy = this[x, y];
+                        byte xz = this[x, z];
+                        byte xy_xz = this[xy, xz];
+
+                        if (x_yz != xy_xz)
+                        {
+                            this.RackCondition1 = false;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public override string ToString()
+        {
+            string strResult = string.Empty;
+            for (int Row = 0; Row < this.n; Row++)
+            {
+                for (int Column = 0; Column < this.n; Column++)
+                {
+                    strResult += this[Row, Column] + " ";
+                }
+                strResult = strResult.TrimEnd();
+                strResult += Environment.NewLine;
+            }
+            strResult = strResult.TrimEnd();
+
+            return strResult;
+        }
+    }
+
+    #endregion
+
+    #region Set
+
+    public class Set
+    {
+        public List<int> lstElementInt = new List<int>();
+        //public List<PadicNumber> lstElementPN = new List<PadicNumber>();
+        public List<string> lstElementString = new List<string>();
+
+        public List<int> Elements
+        {
+            get
+            {
+                return this.lstElementInt;
+            }
+        }
+
+        public Set()
+        {
+        }
+
+        public Set(int n)
+        {
+            for (int i = 1; i <= n; i++)
+            {
+                this.Elements.Add(i);
+            }
+        }
+
+        public Set(int From, int To)
+        {
+            for (int i = From; i <= To; i++)
+            {
+                this.Elements.Add(i);
+            }
+        }
+
+        public Set(int[] Data)
+        {
+            foreach (int D in Data)
+            {
+                this.Elements.Add(D);
+            }
+        }
+
+        //public int this[int Data]
+        //{
+        //    get
+        //    {
+        //        return this.Elements.Add(Data);
+        //    }
+        //    set
+        //    {
+        //        this.Data[i, j] = value;
+        //    }
+        //}
+
+        public int Sum
+        {
+            get
+            {
+                return lstElementInt.Sum(item => item);
+            }
+        }
+
+        public override string ToString()
+        {
+            string Result = string.Join(",", this.Elements.ToArray());
+            return Result;
+        }
+
+        public static Set Intersection(Set S1, Set S2)
+        {
+            Set Intersection = new Set();
+
+            var newData = S1.Elements.Select(item => item).Intersect(S2.Elements);
+            foreach (int I in newData)
+            {
+                Intersection.Elements.Add(I);
+            }
+
+            return Intersection;
+        }
+
+        public void RemoveDuplictes()
+        {
+            List<int> lstNoDuplicates = lstElementInt.Distinct().ToList();
+            lstElementInt = lstNoDuplicates;
+        }
+
+        public List<Set> PowerSet(bool ExlcudeEmptySet = false)
+        {
+            List<Set> lstPowerSet = new List<Set>();
+
+            List<string[]> result = new List<string[]>();
+
+            int StartIndex = 0;
+            if (ExlcudeEmptySet)
+            {
+                StartIndex = 1;
+            }
+
+            int cnt = 1 << this.Elements.Count;
+            for (int i = StartIndex; i < cnt; i++)
+            {
+                Set S = new Set();
+
+                BitArray b = new BitArray(new int[] { i });
+                for (int j = 0; j < Math.Min(this.Elements.Count, b.Length); j++)
+                {
+                    if (b[j] == true)
+                    {
+                        S.Elements.Add(this.Elements[j]);
+                    }
+                }
+
+                lstPowerSet.Add(S);
+            }
+
+            return lstPowerSet;
+        }
+
+        public bool Contiguous
+        {
+            get
+            {
+                bool Result = true;
+                for (int i = 1; i < this.Elements.Count; i++)
+                {
+                    if (this.Elements[i - 1] >= this.Elements[i])
+                    {
+                        Result = false;
+                        break;
+                    }
+                }
+                return Result;
+            }
+        }
+
+        public List<Set> ContiguousSubarrays()
+        {
+            List<Set> PowerSet = this.PowerSet(true);
+
+            List<Set> CS = new List<Set>();
+            foreach (Set S1 in PowerSet)
+            {
+                if (S1.Contiguous)
+                {
+                    CS.Add(S1);
+                }
+            }
+
+            return CS;
+        }
+
+        public List<Set> ContiguousSubarraysMax(int Max)
+        {
+            List<Set> CS = this.ContiguousSubarrays();
+
+            List<Set> CSMax = new List<Set>();
+            foreach (Set S1 in CS)
+            {
+                if (S1.Elements.Max() > Max)
+                {
+                    CSMax.Add(S1);
+                }
+            }
+
+            return CSMax;
+        }
+    }
+
+    #endregion
+
+    #region Statistics
+
+    public class Statistics
+    {
+        public Dictionary<BigInteger, long> dicBI = new Dictionary<BigInteger, long>();
+        public Dictionary<string, long> dicString = new Dictionary<string, long>();
+
+        public void AddBI(BigInteger N, long counter)
+        {
+            if (!this.dicBI.ContainsKey(N))
+            {
+                this.dicBI.Add(N, counter);
+            }
+            else
+            {
+                dicBI[N] += counter;
+            }
+        }
+
+        public void AddString(string N, long counter)
+        {
+            if (!this.dicString.ContainsKey(N))
+            {
+                this.dicString.Add(N, counter);
+            }
+            else
+            {
+                dicString[N] += counter;
+            }
+        }
+
+        public void Clear()
+        {
+            dicBI = new Dictionary<BigInteger, long>();
+            dicString = new Dictionary<string, long>();
+        }
+
+        public string Print()
+        {
+            string strResult = string.Empty;
+
+            strResult += string.Join(",", this.dicBI.Select(item => item).OrderByDescending(item => item.Value).ToArray()) + Environment.NewLine;
+            strResult += string.Join(",", this.dicBI.Select(item => item).OrderBy(item => item.Key).ToArray()) + Environment.NewLine;
+            BigInteger BISum = (BigInteger)this.dicBI.Sum(item => (decimal)item.Key * (decimal)item.Value);
+            strResult += "Operations: " + BISum.ToString() + Environment.NewLine;
+
+            return strResult;
+        }
+    }
+
+    #endregion
+
+    #region Pair_Point
+
+    public class Pair
+    {
+        public long P;
+        public int L;
+
+        public Pair(long P,
+                    int L)
+        {
+            this.P = P;
+            this.L = L;
+        }
+
+        public Pair Clone()
+        {
+            return new Pair(this.P, this.L);
+        }
+
+        public override string ToString()
+        {
+            string strReturn = string.Format("({0},{1})", this.P, this.L);
+            return strReturn;
+        }
+    }
+
+    public class Point : IComparable
+    {
+        public double x;
+        public double y;
+        public int Number;
+        public double Weight1;
+        public double Weight2;
+
+        public Point(string strCoordinates,
+                     int Number = -1)
+        {
+            string[] strData = strCoordinates.Split(' ');
+            this.x = Convert.ToInt32(strData[0]);
+            this.y = Convert.ToInt32(strData[1]);
+            this.Number = Number;
+        }
+
+        public Point(double x,
+                     double y, 
+                     int Number = -1)
+        {
+            this.x = x;
+            this.y = y;
+            this.Number = Number;
+        }
+
+        private void Init()
+        {
+            this.Number = -1;
+            this.Weight1 = 0;
+            this.Weight2 = 0;
+        }
+
+        public double Weight
+        {
+            get
+            {
+                return this.Weight1 + this.Weight2;
+            }
+        }
+
+        public static bool operator ==(Point P1, Point P2)
+        {
+            return P1.CompareTo(P2) == 0;
+        }
+
+        public static bool operator !=(Point P1, Point P2)
+        {
+            return P1.CompareTo(P2) != 0;
+        }
+
+        public int CompareTo(object obj)
+        {
+            Point P = (Point)obj;
+            int Result = -1;
+            if ((this.x == P.x) && (this.y == P.y))
+            {
+                Result = 0;
+            }
+            return Result;
+        }
+
+        public int CompareByX(Point P1, Point P2)
+        {
+            int Result = P1.x.CompareTo(P2.x);
+            return Result;
+        }
+
+        public int CompareByY(Point P1, Point P2)
+        {
+            int Result = P1.y.CompareTo(P2.y);
+            return Result;
+        }
+
+        public override string ToString()
+        {
+            string strReturn = string.Format("({0},{1}) - Weight({2},{3})", this.x, this.y, this.Weight1, this.Weight2);
+            return strReturn;
+        }
+    }
+
+    #endregion
+
+}

@@ -1,0 +1,111 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+class Solution
+{
+
+    static void Main(String[] args)
+    {
+        string[] inputs = Console.ReadLine().Split(' ');
+        string[] inputs2;
+
+        int n = int.Parse(inputs[0]);
+        int q = int.Parse(inputs[1]);
+
+        int[] x = new int[n];
+        int[] y = new int[n];
+        Point[] xTransformed = new Point[n];
+        Point[] yTransformed = new Point[n];
+
+        inputs = Console.ReadLine().Split(' ');
+        inputs2 = Console.ReadLine().Split(' ');
+
+        for (int i = 0; i < n; i++)
+        {
+            x[i] = int.Parse(inputs[i]);
+            y[i] = int.Parse(inputs2[i]);
+            xTransformed[i] = new Point();
+            yTransformed[i] = new Point();
+            xTransformed[i].value = y[i] - x[i];
+            xTransformed[i].index = i;
+            yTransformed[i].value = y[i] + x[i];
+            yTransformed[i].index = i;
+            //xTransformed.Add(new Point() { value = y[i] - x[i], index = i });
+            //yTransformed.Add(new Point() { value = y[i] + x[i], index = i });
+        }
+        
+        int l;
+        int r;
+        
+        double X;
+        double Y;
+        double finalX;
+        double finalY;
+
+        Array.Sort(xTransformed);
+        Array.Sort(yTransformed);
+        //xTransformed.Sort();
+        //yTransformed.Sort();
+        List<Point> xRanged = new List<Point>(n+1);
+        List<Point> yRanged = new List<Point>(n+1);
+
+        for (int i = 0; i < q; i++)
+        {
+            inputs = Console.ReadLine().Split(' ');
+            l = int.Parse(inputs[0]) - 1;
+            r = int.Parse(inputs[1]) - 1;
+
+            for (int j = 0; j < xTransformed.Length; j++)
+            {
+                if ((xTransformed[j].index >= l) && (xTransformed[j].index <= r))
+                {
+                    xRanged.Add(xTransformed[j]);
+                }
+
+                if ((yTransformed[j].index >= l) && (yTransformed[j].index <= r))
+                {
+                    yRanged.Add(yTransformed[j]);
+                }
+            }
+
+            int midpoint = xRanged.Count / 2 - 1;
+            if (xRanged.Count % 2 == 0)
+                X = (xRanged[midpoint].value + xRanged[midpoint + 1].value) / 2.0;
+            else
+                X = xRanged[xRanged.Count / 2].value;
+
+            if (yRanged.Count % 2 == 0)
+                Y = (yRanged[midpoint].value + yRanged[midpoint + 1].value) / 2.0;
+            else
+                Y = yRanged[yRanged.Count / 2].value;
+
+            finalX = (Y-X)/2.0;
+            finalY = (Y+X)/2.0;
+
+            double distance = 0.0;
+
+            for (int j = l; j <= r; j++)
+            {
+                distance += Math.Max(Math.Abs(x[j] - finalX), Math.Abs(y[j] - finalY));
+            }
+
+            Console.WriteLine(distance);
+            xRanged.Clear();
+            yRanged.Clear();
+        }
+
+    }
+
+    public class Point: IComparable
+    {
+        public int value;
+        public int index;
+
+        public int CompareTo(object obj)
+        {
+            if (obj == null) return 1;
+            Point p = obj as Point;
+            return (this.value < p.value) ? -1 : (this.value == p.value) ? 0 : 1;
+        }
+    }
+}

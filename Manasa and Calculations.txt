@@ -1,0 +1,56 @@
+using System;
+using System.IO;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        static long Mod = 1000000007;
+        static void Main(string[] args)
+        {
+            StreamReader sr = new StreamReader(Console.OpenStandardInput());
+            StreamWriter sw = new StreamWriter(Console.OpenStandardOutput());
+            int t = Convert.ToInt32(sr.ReadLine());
+            long result = 1;
+            bool flag = false;
+
+            for (int i = 0; i < t; i++)
+            {
+                string[] input = sr.ReadLine().Split(' ');
+                long p = Convert.ToInt64(input[0]);
+                long b = Convert.ToInt64(input[1]);
+                long a = Convert.ToInt64(input[2]);
+
+                result = result * PowerMod(p, b, Mod) % Mod;
+
+                if (a != b)
+                {
+                    flag = true;
+                    result = result * (PowerMod(p, a - b, Mod) + 1) % Mod;
+                }
+            }
+
+            if (!flag)
+                result = result * 2 % Mod;
+
+            sw.WriteLine(result);
+            sw.Flush();
+        }
+
+        static long PowerMod(long a, long power, long n)
+        {
+            long mod = 1;
+
+            while (power != 0)
+            {
+                if ((power & 1) == 1)
+                    mod = (mod * a % n);
+
+                a = (a * a % n);
+                power >>= 1;
+            }
+
+            return mod;
+        }
+    }
+}

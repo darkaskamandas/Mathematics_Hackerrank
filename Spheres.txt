@@ -1,0 +1,310 @@
+
+using System;
+using System.Linq;
+using System.Text;
+using System.IO;
+using System.Diagnostics;
+using System.Globalization;
+using System.Collections.Generic;
+using System.Threading;
+using kp.Algo;
+
+namespace CodeForces
+{
+	internal class Solution
+	{
+		const int StackSize = 20 * 1024 * 1024;
+
+		private void Solve()
+		{
+			int t = NextInt();
+			while ( t-- > 0 )
+			{
+				double r1 = NextInt(), r2 = NextInt();
+				double x1 = NextInt(), y1 = NextInt(), z1 = NextInt();
+				double vx1 = NextInt(), vy1 = NextInt(), vz1 = NextInt();
+				double x2 = NextInt(), y2 = NextInt(), z2 = NextInt();
+				double vx2 = NextInt(), vy2 = NextInt(), vz2 = NextInt();
+
+				double l = 0, r = 1e6, mn = 1e10;
+				for ( int z = 0; z < 100; ++z )
+				{
+					double ll = ( 2 * l + r ) / 3;
+					double rr = ( l + 2 * r ) / 3;
+
+					double fl = Math.Sqrt( ( x1 + ll * vx1 - ( x2 + ll * vx2 ) ) * ( x1 + ll * vx1 - ( x2 + ll * vx2 ) )
+						+ ( y1 + ll * vy1 - ( y2 + ll * vy2 ) ) * ( y1 + ll * vy1 - ( y2 + ll * vy2 ) )
+						+ ( z1 + ll * vz1 - ( z2 + ll * vz2 ) ) * ( z1 + ll * vz1 - ( z2 + ll * vz2 ) ) );
+
+					double fr = Math.Sqrt( ( x1 + rr * vx1 - ( x2 + rr * vx2 ) ) * ( x1 + rr * vx1 - ( x2 + rr * vx2 ) )
+						+ ( y1 + rr * vy1 - ( y2 + rr * vy2 ) ) * ( y1 + rr * vy1 - ( y2 + rr * vy2 ) )
+						+ ( z1 + rr * vz1 - ( z2 + rr * vz2 ) ) * ( z1 + rr * vz1 - ( z2 + rr * vz2 ) ) );
+
+					mn = Math.Min( mn, fl );
+					mn = Math.Min( mn, fr );
+
+					if ( fl < fr )
+					{
+						r = rr;
+					}
+					else
+					{
+						l = ll;
+					}
+				}
+
+				if ( mn < r1 + r2 + 1e-7 )
+					Out.WriteLine( "YES" );
+				else Out.WriteLine( "NO" );
+			}
+		}
+
+		#region Local wireup
+
+		public int[] NextIntArray( int size )
+		{
+			var res = new int[size];
+			for ( int i = 0; i < size; ++i ) res[i] = NextInt();
+			return res;
+		}
+
+		public long[] NextLongArray( int size )
+		{
+			var res = new long[size];
+			for ( int i = 0; i < size; ++i ) res[i] = NextLong();
+			return res;
+		}
+
+		public double[] NextDoubleArray( int size )
+		{
+			var res = new double[size];
+			for ( int i = 0; i < size; ++i ) res[i] = NextDouble();
+			return res;
+		}
+
+		public int NextInt()
+		{
+			return _in.NextInt();
+		}
+
+		public long NextLong()
+		{
+			return _in.NextLong();
+		}
+
+		public string NextLine()
+		{
+			return _in.NextLine();
+		}
+
+		public double NextDouble()
+		{
+			return _in.NextDouble();
+		}
+
+		readonly Scanner _in = new Scanner();
+		static readonly TextWriter Out = Console.Out;
+
+		void Start()
+		{
+#if KP_HOME
+			var timer = new Stopwatch();
+			timer.Start();
+#endif
+			var t = new Thread( Solve, StackSize );
+			t.Start();
+			t.Join();
+#if KP_HOME
+			timer.Stop();
+			Console.WriteLine( string.Format( CultureInfo.InvariantCulture, "Done in {0} seconds.\nPress <Enter> to exit.", timer.ElapsedMilliseconds / 1000.0 ) );
+			Console.ReadLine();
+#endif
+		}
+
+		static void Main()
+		{
+			new Solution().Start();
+		}
+
+		class Scanner : IDisposable
+		{
+			#region Fields
+
+			readonly TextReader _reader;
+			readonly int _bufferSize;
+			readonly bool _closeReader;
+			readonly char[] _buffer;
+			int _length, _pos;
+
+			#endregion
+
+			#region .ctors
+
+			public Scanner( TextReader reader, int bufferSize, bool closeReader )
+			{
+				_reader = reader;
+				_bufferSize = bufferSize;
+				_closeReader = closeReader;
+				_buffer = new char[_bufferSize];
+				FillBuffer( false );
+			}
+
+			public Scanner( TextReader reader, bool closeReader ) : this( reader, 1 << 16, closeReader ) { }
+
+			public Scanner( string fileName ) : this( new StreamReader( fileName, Encoding.Default ), true ) { }
+
+#if !KP_HOME
+			public Scanner() : this( Console.In, false ) { }
+#else
+			public Scanner() : this( "input.txt" ) { }
+#endif
+
+			#endregion
+
+			#region IDisposable Members
+
+			public void Dispose()
+			{
+				if ( _closeReader )
+				{
+					_reader.Close();
+				}
+			}
+
+			#endregion
+
+			#region Properties
+
+			public bool Eof
+			{
+				get
+				{
+					if ( _pos < _length ) return false;
+					FillBuffer( false );
+					return _pos >= _length;
+				}
+			}
+
+			#endregion
+
+			#region Methods
+
+			private char NextChar()
+			{
+				if ( _pos < _length ) return _buffer[_pos++];
+				FillBuffer( true );
+				return _buffer[_pos++];
+			}
+
+			private char PeekNextChar()
+			{
+				if ( _pos < _length ) return _buffer[_pos];
+				FillBuffer( true );
+				return _buffer[_pos];
+			}
+
+			private void FillBuffer( bool throwOnEof )
+			{
+				_length = _reader.Read( _buffer, 0, _bufferSize );
+				if ( throwOnEof && Eof )
+				{
+					throw new IOException( "Can't read beyond the end of file" );
+				}
+				_pos = 0;
+			}
+
+			public int NextInt()
+			{
+				var neg = false;
+				int res = 0;
+				SkipWhitespaces();
+				if ( !Eof && PeekNextChar() == '-' )
+				{
+					neg = true;
+					_pos++;
+				}
+				while ( !Eof && !IsWhitespace( PeekNextChar() ) )
+				{
+					var c = NextChar();
+					if ( c < '0' || c > '9' ) throw new ArgumentException( "Illegal character" );
+					res = 10 * res + c - '0';
+				}
+				return neg ? -res : res;
+			}
+
+			public long NextLong()
+			{
+				var neg = false;
+				long res = 0;
+				SkipWhitespaces();
+				if ( !Eof && PeekNextChar() == '-' )
+				{
+					neg = true;
+					_pos++;
+				}
+				while ( !Eof && !IsWhitespace( PeekNextChar() ) )
+				{
+					var c = NextChar();
+					if ( c < '0' || c > '9' ) throw new ArgumentException( "Illegal character" );
+					res = 10 * res + c - '0';
+				}
+				return neg ? -res : res;
+			}
+
+			public string NextLine()
+			{
+				SkipUntilNextLine();
+				if ( Eof ) return "";
+				var builder = new StringBuilder();
+				while ( !Eof && !IsEndOfLine( PeekNextChar() ) )
+				{
+					builder.Append( NextChar() );
+				}
+				return builder.ToString();
+			}
+
+			public double NextDouble()
+			{
+				SkipWhitespaces();
+				var builder = new StringBuilder();
+				while ( !Eof && !IsWhitespace( PeekNextChar() ) )
+				{
+					builder.Append( NextChar() );
+				}
+				return double.Parse( builder.ToString(), CultureInfo.InvariantCulture );
+			}
+
+			private void SkipWhitespaces()
+			{
+				while ( !Eof && IsWhitespace( PeekNextChar() ) )
+				{
+					++_pos;
+				}
+			}
+
+			private void SkipUntilNextLine()
+			{
+				while ( !Eof && IsEndOfLine( PeekNextChar() ) )
+				{
+					++_pos;
+				}
+			}
+
+			private static bool IsWhitespace( char c )
+			{
+				return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+			}
+
+			private static bool IsEndOfLine( char c )
+			{
+				return c == '\n' || c == '\r';
+			}
+
+			#endregion
+		}
+
+		#endregion
+	}
+}
+
+namespace kp.Algo { }

@@ -1,0 +1,98 @@
+namespace SimpleOne
+{
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+
+    public class Program
+    {
+        private const long mod = 1000000007;
+
+        static void Main(string[] args)
+        {
+#if DEBUG
+            Console.SetIn(new StreamReader("input.txt"));
+#endif
+            int t = int.Parse(Console.ReadLine());
+
+            for (int i = 0; i < t; i++)
+            {
+                var line = Console.ReadLine().Split(' ').Select(x => long.Parse(x)).ToArray();
+                var solution = Solve(line[0], line[1], (int)line[2]);
+
+                Console.WriteLine(solution);
+            }
+        }
+
+        private static long ModularInverse(long a, long n)
+        {
+            long t = 0;
+            long newt = 1;
+            long r = n;
+            long newr = a;
+
+            while (newr != 0)
+            {
+                var quotient = r / newr;
+
+                var tmpt = t;
+                t = newt;
+                newt = tmpt - quotient * newt;
+
+                var tmpr = r;
+                r = newr;
+                newr = tmpr - quotient * newr;
+            }
+
+            if (t < 0)
+                t = t + n;
+
+            return t;
+        }
+
+        private static long Solve(long p, long q, int n)
+        {
+            var pair = Iterate(p, q, n);
+            return (pair.Item1 * ModularInverse(pair.Item2, mod)) % mod;
+        }
+
+        private static Tuple<long, long> Iterate(long p, long q, int n)
+        {
+            if (n == 1)
+                return Tuple.Create(p, q);
+
+            long pNew;
+            long qNew;
+
+            if (n % 2 == 1)
+            {
+                var prev = Iterate(p, q, n - 1);
+                var pOld = prev.Item1;
+                var qOld = prev.Item2;
+
+                pNew = ((pOld * q) % mod + (p * qOld) % mod) % mod;
+                qNew = ((qOld * q) % mod - ((pOld) * p) % mod) % mod;
+            }
+            else
+            {
+                var half = Iterate(p, q, n / 2);
+
+                var x = half.Item1;
+                var y = half.Item2;
+
+                pNew = (((2 * x) % mod) * y) % mod;
+                qNew = ((y * y) % mod - (x * x) % mod) % mod;
+            }
+
+            while (pNew < 0)
+                pNew += mod;
+
+            while (qNew < 0)
+                qNew += mod;
+
+            return Tuple.Create(pNew, qNew);
+        }
+    }
+}

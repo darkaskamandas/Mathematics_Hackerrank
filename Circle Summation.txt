@@ -1,0 +1,149 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+
+namespace CircleSummation
+{
+    class Solution
+    {
+        const long Mod = 1000000007;
+
+        static void Main(string[] args)
+        {
+            int caseCount = int.Parse(Console.ReadLine());
+            for (int i = 0; i<caseCount; i++) {
+                ProcessCase();
+                if (i!=(caseCount-1))
+                    Console.WriteLine();
+            }
+            // Thread.Sleep(100000);
+            return;
+        }
+
+        private static void ProcessCase()
+        {
+            var nm = ReadSpaceDelimitedSequence().Select(int.Parse).ToArray();
+            int childCount = nm[0];
+            int turnCount = nm[1];
+            var numbers = ReadSpaceDelimitedSequence().Select(long.Parse).ToArray();
+            var matrix = GetTurnMatrix(childCount, turnCount);
+            for (int i = 0; i<childCount; i++) {
+                var result = Shift(Apply(Shift(numbers, -i), matrix), i);
+                Console.WriteLine(string.Join(" ", result));
+            }
+        }
+
+        private static long[] Shift(long[] source, int shift)
+        {
+            int size = source.Length;
+            var result = new long[size];
+            for (int i = 0; i < size; i++) {
+                int j = (i + size + shift)%size;
+                result[j] = source[i];
+            }
+            return result;
+        }
+
+        private static long[][] GetTurnMatrix(int childCount, int turnCount)
+        {
+            var start = GetIdentityMatrix(childCount);
+            var round1 = MakeTurns(start, childCount);
+            var rounds = new long[30][][];
+            rounds[0] = round1;
+            for (int i = 1; i < rounds.Length; i++)
+                rounds[i] = Apply(rounds[i - 1], rounds[i - 1]);
+            int roundCount = turnCount/childCount;
+            var current = start;
+            for (int i = 0, mask = 1; i < rounds.Length; i++, mask <<= 1)
+                if (0 != (roundCount & mask))
+                    current = Apply(current, rounds[i]);
+            current = MakeTurns(current, turnCount%childCount);
+            return current;
+        }
+
+        private static long[][] MakeTurns(long[][] source, int turnCount)
+        {
+            int size = source.Length;
+            var result = CloneMatrix(source);
+            for (int i = 0; i<turnCount; i++) {
+                int il = (size + i - 1)%size;
+                int im = (size + i + 0)%size;
+                int ir = (size + i + 1)%size;
+                for (int j = 0; j < size; j++)
+                    result[im][j] = (result[il][j] + result[im][j] + result[ir][j])%Mod;
+            }
+            return result;
+        }
+
+        private static long[] Apply(long[] source, long[][] matrix)
+        {
+            int size = source.Length;
+            var result = new long[size];
+            for (int i = 0; i<size; i++) {
+                for (int j = 0; j < size; j++)
+                    result[i] = (result[i] + source[j]*matrix[i][j])%Mod;
+            }
+            return result;
+        }
+
+        private static long[][] Apply(long[][] source, long[][] applied)
+        {
+            int size = source.Length;
+            var result = GetZeroMatrix(size);
+            for (int i = 0; i<size; i++) {
+                for (int j = 0; j < size; j++) {
+                    var x = applied[i][j];
+                    for (int k = 0; k < size; k++) {
+                        result[i][k] = (result[i][k] + x*source[j][k])%Mod;
+                    }
+                }
+            }
+            return result;
+        }
+
+        private static long[][] CloneMatrix(long[][] source)
+        {
+            var size = source.Length;
+            var m = new long[size][];
+            for (int i = 0; i < size; i++) {
+                m[i] = new long[size];
+                Array.Copy(source[i], m[i], size);
+            }
+            return m;
+        }
+
+        private static long[][] GetZeroMatrix(int size)
+        {
+            var m = new long[size][];
+            for (int i = 0; i < size; i++)
+                m[i] = new long[size];
+            return m;
+        }
+
+        private static long[][] GetIdentityMatrix(int size)
+        {
+            var m = new long[size][];
+            for (int i = 0; i < size; i++) {
+                m[i] = new long[size];
+                m[i][i] = 1;
+            }
+            return m;
+        }
+
+        private static void Dump(long[][] m)
+        {
+            for (int i = 0; i < m.Length; i++) {
+                var item = m[i];
+                Console.WriteLine("{0} = {1}", i, string.Join(", ", string.Format("[{0}]", string.Join(",", item))));
+            }
+            Console.WriteLine();
+        }
+
+        private static IEnumerable<string> ReadSpaceDelimitedSequence()
+        {
+            return Console.ReadLine().Split(' ').Where(s => !string.IsNullOrEmpty(s));
+        }
+    }
+}

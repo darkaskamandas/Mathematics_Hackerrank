@@ -1,0 +1,71 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        struct NumItem
+        {
+            public long Int, Real;
+
+            public static NumItem MulMod(NumItem a, NumItem b, long mod)
+            {
+                long intPart = (a.Int * b.Int + a.Real * b.Real * 2) % mod;
+                long realPart = (a.Real * b.Int + a.Int * b.Real) % mod;
+                return new NumItem { Int = intPart, Real = realPart};
+            }
+            public static NumItem PowerMod(NumItem a, long power, long mod)
+            {
+                NumItem modNum = new NumItem { Int = 2, Real = 0 };
+
+                while (power != 0)
+                {
+                    if ((power & 1) == 1)
+                        modNum = NumItem.MulMod(modNum, a, mod);
+
+                    a = NumItem.MulMod(a, a, mod);
+                    power >>= 1;
+                }
+
+                return modNum;
+            }
+        }
+
+        static long Mod = 1000000007, Loop = 500000003;
+
+        static long Solve(long[] nums)
+        {
+            long result = 1;
+
+            for(int i = 0; i < nums.Length; i++)
+            {
+                var mul = CalMul(nums[i]);
+                result = (result * mul.Int) % Mod;
+            }
+
+            return result;
+        }
+
+        static NumItem CalMul(long n)
+        {
+            NumItem mul = new NumItem { Int = 3, Real = 2 };
+            var mulP = NumItem.PowerMod(mul, n, Mod);
+            return mulP;
+        }
+
+        static void Main(string[] args)
+        {
+            StreamReader sr = new StreamReader(Console.OpenStandardInput());
+            int t = Convert.ToInt32(sr.ReadLine());
+            string[] input = sr.ReadLine().Split(' ');
+            List<long> nums = new List<long>();
+
+            for (int i = 0; i < t; i++)
+                nums.Add(Convert.ToInt64(input[i]));
+
+            Console.WriteLine(Solve(nums.ToArray()));
+        }
+    }
+}

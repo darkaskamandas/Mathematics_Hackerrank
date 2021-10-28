@@ -1,0 +1,19 @@
+using System;
+
+class Solution{
+  public static void Main(String[] args){
+    UInt64 minX,minY;
+    minX = minY = UInt64.MaxValue;
+    char[] seps = {' ', '\t'};
+    for(int numCases = Int32.Parse(Console.ReadLine());
+       numCases > 0;
+       numCases--){
+
+      string[] strs = Console.ReadLine().Split(seps);
+      minX = Math.Min(UInt64.Parse(strs[0]), minX);
+      minY = Math.Min(UInt64.Parse(strs[1]), minY);
+    }
+    
+    Console.WriteLine("{0}",minX*minY);
+  }
+}

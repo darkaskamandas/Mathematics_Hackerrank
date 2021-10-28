@@ -1,0 +1,62 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+class Solution
+{
+    public static bool linear(double x, double y, double ax, double ay, double bx, double by)
+    {
+        return (bx - ax) * (y - ay) >= (by - ay) * (x - ax);
+    }
+
+    static void Main(string[] args)
+    {
+        var a = Console.ReadLine().Split().Select(Int32.Parse).ToArray();
+        var w = a[0];
+        var h = a[1];
+
+        a = Console.ReadLine().Split().Select(Int32.Parse).ToArray();
+        var cx = a[0];
+        var cy = a[1];
+        var r = a[2];
+
+        a = Console.ReadLine().Split().Select(Int32.Parse).ToArray();
+        var x1 = a[0];
+        var y1 = a[1];
+        var x3 = a[2];
+        var y3 = a[3];
+
+        var ux = x3 - x1;
+        var uy = y3 - y1;
+
+        var vx = uy;
+        var vy = -ux;
+
+        var x2 = x1 + 0.5 * (ux + vx);
+        var y2 = y1 + 0.5 * (uy + vy);
+
+        var x4 = x1 + 0.5 * (ux - vx);
+        var y4 = y1 + 0.5 * (uy - vy);
+
+
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                var dx = x - cx;
+                var dy = y - cy;
+
+                if (dx * dx + dy * dy <= r * r || (linear(x, y, x1, y1, x2, y2) && linear(x, y, x2, y2, x3, y3) && linear(x, y, x3, y3, x4, y4) && linear(x, y, x4, y4, x1, y1)))
+                {
+                    Console.Write('#');
+                }
+                else
+                {
+                    Console.Write('.');
+                }
+            }
+            Console.WriteLine();
+        }
+    }
+}

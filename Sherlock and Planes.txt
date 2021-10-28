@@ -1,0 +1,137 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Text;
+
+// (?*?*)????????????????????????????
+public class Solver
+{
+    long Det(long[,] m)
+    {
+        return m[0, 0] * m[1, 1] * m[2, 2] + m[1, 0] * m[2, 1] * m[0, 2] + m[0, 1] * m[1, 2] * m[2, 0] -
+            m[2, 0] * m[1, 1] * m[0, 2] - m[1, 0] * m[0, 1] * m[2, 2] - m[0, 0] * m[2, 1] * m[1, 2];
+    }
+
+    public object Solve()
+    {
+        for (int t = ReadInt(); t > 0; t--)
+        {
+            var a = ReadIntMatrix(4);
+            var m = new long[,]
+            {
+                { a[3][0] - a[0][0], a[3][1] - a[0][1], a[3][2] - a[0][2] },
+                { a[1][0] - a[0][0], a[1][1] - a[0][1], a[1][2] - a[0][2] },
+                { a[2][0] - a[0][0], a[2][1] - a[0][1], a[2][2] - a[0][2] }
+            };
+            writer.WriteLine(Det(m) == 0 ? "YES" : "NO");
+        }
+
+        return null;
+    }
+    
+    #region Main
+
+    protected static TextReader reader;
+    protected static TextWriter writer;
+
+    static void Main()
+    {
+#if DEBUG
+        reader = new StreamReader("..\\..\\input.txt");
+        writer = Console.Out;
+#else
+        reader = Console.In;
+        writer = Console.Out;
+#endif
+        try
+        {
+            object result = new Solver().Solve();
+            if (result != null)
+                writer.WriteLine(result);
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            Console.WriteLine(ex);
+#else
+            throw;
+#endif
+        }
+        reader.Close();
+        writer.Close();
+    }
+
+    #endregion
+
+    #region Read/Write
+
+    private static Queue<string> currentLineTokens = new Queue<string>();
+
+    private static string[] ReadAndSplitLine()
+    {
+        return reader.ReadLine().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+    }
+
+    public static string ReadToken()
+    {
+        while (currentLineTokens.Count == 0)
+            currentLineTokens = new Queue<string>(ReadAndSplitLine());
+        return currentLineTokens.Dequeue();
+    }
+
+    public static int ReadInt()
+    {
+        return int.Parse(ReadToken());
+    }
+
+    public static long ReadLong()
+    {
+        return long.Parse(ReadToken());
+    }
+
+    public static double ReadDouble()
+    {
+        return double.Parse(ReadToken(), CultureInfo.InvariantCulture);
+    }
+
+    public static int[] ReadIntArray()
+    {
+        return ReadAndSplitLine().Select(int.Parse).ToArray();
+    }
+
+    public static long[] ReadLongArray()
+    {
+        return ReadAndSplitLine().Select(long.Parse).ToArray();
+    }
+
+    public static double[] ReadDoubleArray()
+    {
+        return ReadAndSplitLine().Select(s => double.Parse(s, CultureInfo.InvariantCulture)).ToArray();
+    }
+
+    public static int[][] ReadIntMatrix(int numberOfRows)
+    {
+        int[][] matrix = new int[numberOfRows][];
+        for (int i = 0; i < numberOfRows; i++)
+            matrix[i] = ReadIntArray();
+        return matrix;
+    }
+
+    public static string[] ReadLines(int quantity)
+    {
+        string[] lines = new string[quantity];
+        for (int i = 0; i < quantity; i++)
+            lines[i] = reader.ReadLine().Trim();
+        return lines;
+    }
+
+    public static void WriteArray<T>(IEnumerable<T> array)
+    {
+        writer.WriteLine(string.Join(" ", array));
+    }
+
+    #endregion
+}

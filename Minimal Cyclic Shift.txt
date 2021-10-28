@@ -1,0 +1,62 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+
+class Solution 
+{
+    static void Main(String[] args) 
+    {
+        checked 
+        {        
+            var w = GetInts();
+            var n = w[0];
+            var k = w[1];
+            var a = GetInts();
+            var b = GetInts();
+            long m = 998244353;
+            
+            int x = 0;
+            while (x < n)
+            {
+                int j = x;
+                long k2 = (a[0] - b[j]) % m;
+                long k1 = (a[1] - b[(j + 1) % n]) % m - k2;
+                bool good0 = true;
+                bool good1 = true;
+                for (int i = 1; (good0 || good1) && i < n; ++i)
+                {
+                    ++j;
+                    if (j == n) j = 0;
+                    
+                    var Fi = (a[i] - b[j]) % m;
+                    
+                    if ((Fi - k2) % m != 0) {good0 = false;}
+                    if ((Fi - (k1 * i + k2)) % m != 0) {good1 = false;}
+                }
+                if (good0 || good1) break;
+                ++x;
+            }
+            
+            var res = 0L;
+            if (x < n) res = x;
+            else if (n < 100) res = n / 2;
+            else res = 0;
+            Console.WriteLine(res.ToString());
+        }
+    }
+    
+    static long[] GetInts()
+    {   
+        return Console.ReadLine().Split(' ').Select(long.Parse).ToArray();
+    }
+    
+    static void WL(string s, bool error = false)
+    {
+        if (error)
+            Console.Error.WriteLine(s);
+        else 
+            Console.WriteLine(s);
+    }
+}

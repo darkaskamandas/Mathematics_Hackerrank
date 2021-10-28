@@ -1,0 +1,43 @@
+#include <cmath>
+#include <cstdlib>
+#include <cstdio>
+#include <climits>
+#include <functional>
+#include <bitset>
+#include <cstring>
+#include <iostream>
+#include <algorithm>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <list>
+#include <queue>
+#include <set>
+#include <map>
+using namespace std;
+
+int main() {
+    int q;
+    cin>>q;
+    for (int i=0; i<q; ++i) {
+        int n;
+        cin>>n;
+        vector<int> vx(n), vy(n);
+        for (int i=0; i<n; ++i)
+            cin>>vx[i]>>vy[i];
+        vector<int> tx(vx), ty(vy);
+        sort(tx.begin(), tx.end());
+        sort(ty.begin(), ty.end());
+        int lbx=tx[0], ubx=tx.back(), lby=ty[0], uby=ty.back();
+        bool ok=1;
+        for (int i=0; i<n; ++i) {
+            if (vx[i]!=lbx && vx[i]!=ubx && vy[i]!=lby && vy[i]!=uby) {
+                ok=0;
+                break;
+            }
+        }
+        if (ok) cout<<"YES\n";
+        else cout<<"NO\n";
+    }
+    return 0;
+}

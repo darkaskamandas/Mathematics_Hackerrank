@@ -1,0 +1,127 @@
+using System;
+
+class Solution
+{
+    static int N;
+    static int[,] coor;
+    static int[] v;
+    static int Solve()
+    {
+        int min = 1 << 17, diff, weight = 0;
+        for (int i = 0; i < N; i++)
+        {
+            for (int j = i + 1; j < N; j++)
+            {
+                int w = Weight(i, j, out diff);
+                if (diff < min)
+                {
+                    min = diff;
+                    weight = w;
+                }
+            }
+        }
+        return weight;
+    }
+    static int Weight(int p1, int p2, out int diff)
+    {
+        int r1 = 0, r2 = 0; diff = 0;
+        int x1 = coor[p1, 0], y1 = coor[p1, 1], x2 = coor[p2, 0], y2 = coor[p2, 1];
+        var xx = Math.Abs(x1 - x2);
+        var yy = Math.Abs(y1 - y2);
+        int minx = x1, maxx = x2, miny = y1, maxy = y2;
+        bool InLeftPart;
+        if (x2 < x1)
+        {
+            minx = x2; maxx = x1;
+        }
+        if (y2 < y1)
+        {
+            miny = y2; maxy = y1;
+        }
+        for (int i = 0; i < N; i++)
+        {
+            if (p1 != i && p2 != i)
+            {
+                int x3 = coor[i, 0], y3 = coor[i, 1];
+                if (xx < yy && xx != 0)
+                {
+                    double y = GetY(x1, x2, y1, y2, x3);
+                    InLeftPart = y3 > y;
+                }
+                else
+                {
+                    double x = GetX(x1, x2, y1, y2, y3);
+                    InLeftPart = x3 < x;
+                }
+                if (InLeftPart)
+                    r1 += v[i];
+                else
+                    r2 += v[i];
+            }
+        }
+        int v1 = v[p1], v2 = v[p2];
+        int sum = v1 + v2;
+        if (r1 > r2)
+        {
+            r2 += sum;
+            if (r2 > r1)
+            {
+                if (v1 > v2)
+                {
+                    r2 -= v2;
+                    r1 += v2;
+                }
+                else
+                {
+                    r2 -= v1;
+                    r1 += v1;
+                }
+            }
+        }
+        else
+        {
+            r1 += sum;
+            if (r1 > r2)
+            {
+                if (v1 > v2)
+                {
+                    r1 -= v2;
+                    r2 += v2;
+                }
+                else
+                {
+                    r1 -= v1;
+                    r2 += v1;
+                }
+            }
+        }
+        diff = (int)Math.Abs(r1 - r2);
+        return r1 < r2 ? r1 : r2;
+    }
+
+    static double GetX(int x1, int x2, int y1, int y2, int y)
+    {
+        return ((double)(x2 - x1) / (y2 - y1) * (y - y1)) + x1;
+    }
+    static double GetY(int x1, int x2, int y1, int y2, int x)
+    {
+        return ((double)(y2 - y1) / (x2 - x1) * (x - x1)) + y1;
+    }
+    static void Main(string[] args)
+    {
+        N = int.Parse(Console.ReadLine());
+        coor = new int[N, 2];
+        v = new int[N];
+        for (int i = 0; i < N; i++)
+        {
+            var s = Console.ReadLine().Split();
+            coor[i, 0] = int.Parse(s[0]);
+            coor[i, 1] = int.Parse(s[1]);
+            v[i] = int.Parse(s[2]);
+        }
+        if (N == 1)
+            Console.WriteLine(0);
+        else
+            Console.WriteLine(Solve());
+    }
+}

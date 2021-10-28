@@ -1,0 +1,29 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+class Solution {
+    static void Main(String[] args) {
+        string[] line = Console.ReadLine().Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
+        int N = Int32.Parse(line[0]);
+        int M = Int32.Parse(line[1]);
+        long[][] arr = new long[M][];
+        for(int m=0; m<M; m++) {
+            arr[m] = new long[N];
+        }
+        for(int n=0; n<N; n++) {
+            line = Console.ReadLine().Split(new char[0], StringSplitOptions.RemoveEmptyEntries);
+            for(int m=0; m<M; m++) {
+                arr[m][n] = Int64.Parse(line[m]);
+            }
+        }
+        for(int m=0; m<M; m++) {
+            Array.Sort(arr[m]);
+            //for(int i=0; i<N; i++) Console.Write(arr[m][i] + ",");
+            if(N%2 == 1) {
+                Console.Write(arr[m][N/2] + " ");
+            } else {
+                Console.Write(arr[m][N/2-1] + " ");
+            }
+        }
+    }
+}

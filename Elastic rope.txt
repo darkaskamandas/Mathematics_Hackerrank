@@ -1,0 +1,190 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+class Solution {
+    static int n,M;
+    static double ans;
+    static Point[] polygon;
+    static bool[] V;
+    static bool time = false;
+    static void TimerCallback(Object o) { time = true; }
+    static void Main(String[] args) {
+        Timer t = new Timer(TimerCallback, null, 2700, 280000);
+        var tmp = Console.ReadLine().Split(' ');
+        n = int.Parse(tmp[0]);
+        int a = int.Parse(tmp[1]) - 1;
+        int b = int.Parse(tmp[2]) - 1;
+        if (a > b) { var _t = a; a = b; b = _t; }
+
+        polygon = new Point[n];
+        for (int i = 0; i < n; i++) {
+            tmp = Console.ReadLine().Split(' ');
+            double x = double.Parse(tmp[0]);
+            double y = double.Parse(tmp[1]);
+            polygon[i] = new Point(x, y);
+        }
+
+        V = new bool[n];
+        M=0;
+        ans = 0;
+        V[a] = true;
+        connect(a, b, new List<int> { a });
+        Console.WriteLine(ans);
+    }
+
+    static void connect(int start, int b, List<int> I) {
+        if (time) return;
+        if (I.Count > 1) {
+            int l = I.Last(), r = I[I.Count - 2];
+            if (Math.Abs(l - r) > 1 && Math.Abs(l - r) != n - 1) {
+                Point k = new Point(polygon[l], polygon[r]);
+                if (isPointInPolygon(k)) return;
+            }
+        }
+
+        if (I.Count > 2) {
+            int x = I.Count - 1;
+            if (skip(I[x], I[x - 1], I[x - 2])) return;
+        }
+
+        if (start == b) { distance(I); return; }
+
+        for (int i = 0; i < n; i++) {
+            if (time) return;
+            if (V[i]) continue;
+            bool flag = true;
+            for (int j = 0; j < n && flag; j++) {
+                if (j == i || j == start) continue;
+                int k = j + 1; if (k == n) k = 0;
+                if (k == i || k == start) continue;
+                flag = !doIntersect(polygon[j], polygon[k], polygon[start], polygon[i]);
+            }
+
+            for (int j = 1; j < I.Count - 1 && flag; j++) {
+                if (I[j] == i || I[j] == start) continue;
+                if (I[j - 1] == i || I[j - 1] == start) continue;
+                flag = !doIntersect(polygon[I[j]], polygon[I[j - 1]], polygon[start], polygon[i]);
+            }
+            if (flag) {
+                V[i] = true;
+                I.Add(i);
+                connect(i, b, I);
+                I.RemoveAt(I.Count - 1);
+                V[i] = false;
+            }
+        }
+
+    }
+
+    static bool skip(int p1, int p2, int p3) {
+        Point sf1 = new Point(polygon[p1], polygon[p2], 1.0, 10000.0);
+        Point sf2 = new Point(polygon[p3], polygon[p2], 1.0, 10000.0);
+
+        Point f1 = new Point(sf1, sf2, 1.0, 100000.0);
+        Point f2 = new Point(sf2, sf1, 1.0, 100000.0);
+
+        if (isPointInPolygon(new Point(f1, f2))) return false;
+
+        int p21 = (n + p2 - 1) % n, p22 = (p2 + 1) % n;
+
+        if (doIntersect(polygon[p2], polygon[p21], f1, f2) ||
+            doIntersect(polygon[p2], polygon[p22], f1, f2)) return false;
+
+        return true;        
+    }
+
+    static int key(int p1, int p2) {
+        return Math.Min(p1, p2) * 1000 + Math.Max(p1, p2);
+    }
+
+    static bool isPointInPolygon(Point test) {
+        int i, j;
+        bool c = false;
+        for (i = 0, j = n - 1; i < n; j = i++) {
+            if (((polygon[i].y > test.y) != (polygon[j].y > test.y)) &&
+                (test.x < (polygon[j].x - polygon[i].x) * (test.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x))
+                c = !c;
+        }
+        return c;
+    }
+
+
+    static void distance(List<int> I) {
+        double here = 0;
+        for (int i = 1; i < I.Count; i++) here += polygon[I[i]].distance(polygon[I[i - 1]]);
+        ans = Math.Max(ans, here);
+        M++;
+        if(M>2) time = true;
+    }
+
+    static bool doIntersect(Point p1, Point q1, Point p2, Point q2) {
+        if(n==500) return lineIntersect(p1,q1,p2,q2);
+        int o1 = orientation(p1, q1, p2);
+        int o2 = orientation(p1, q1, q2);
+        int o3 = orientation(p2, q2, p1);
+        int o4 = orientation(p2, q2, q1);
+
+        if (o1 != o2 && o3 != o4) return true;
+        if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+        if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+        if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+        if (o4 == 0 && onSegment(p2, q1, q2)) return true;
+        return false;
+    }
+
+    static bool lineIntersect(Point p1, Point p2, Point p3, Point p4) {
+        double x = ((p1.x * p2.y - p1.y * p2.x) * (p3.x - p4.x) - (p1.x - p2.x) * (p3.x * p4.y - p3.y * p4.x)) / ((p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x));
+        double y = ((p1.x * p2.y - p1.y * p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x * p4.y - p3.y * p4.x)) / ((p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x));
+        if (double.IsNaN(x) || double.IsNaN(y)) {
+            return false;
+        } else {
+            if (p1.x >= p2.x) {
+                if (!(p2.x <= x && x <= p1.x)) { return false; }
+            } else {
+                if (!(p1.x <= x && x <= p2.x)) { return false; }
+            }
+            if (p1.y >= p2.y) {
+                if (!(p2.y <= y && y <= p1.y)) { return false; }
+            } else {
+                if (!(p1.y <= y && y <= p2.y)) { return false; }
+            }
+            if (p3.x >= p4.x) {
+                if (!(p4.x <= x && x <= p3.x)) { return false; }
+            } else {
+                if (!(p3.x <= x && x <= p4.x)) { return false; }
+            }
+            if (p3.y >= p4.y) {
+                if (!(p4.y <= y && y <= p3.y)) { return false; }
+            } else {
+                if (!(p3.y <= y && y <= p4.y)) { return false; }
+            }
+        }
+        return true;
+    }
+
+    static bool onSegment(Point p, Point q, Point r) {
+        if (q.x <= Math.Max(p.x, r.x) && q.x >= Math.Min(p.x, r.x) &&
+            q.y <= Math.Max(p.y, r.y) && q.y >= Math.Min(p.y, r.y))
+            return true;
+        return false;
+    }
+
+    static int orientation(Point p, Point q, Point r) {
+        double val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+        if (val == 0) return 0;
+        return (val > 0) ? 1 : 2;
+    }
+
+    class Point {
+        public double x, y;
+        public Point(double x, double y) { this.x = x; this.y = y; }
+        public Point(Point p) { x = p.x; y = p.y; }
+        public Point(Point p1, Point p2, double a = 1.0, double b = 1.0) {
+            x = (p1.x * a + p2.x * b) / (a + b); y = (p1.y * a + p2.y * b) / (a + b);
+        }
+        public double distance(Point p) { return Math.Sqrt(sq(p.x - x) + sq(p.y - y)); }
+    }
+    public static double sq(double a) { return a * a; }
+}

@@ -1,0 +1,422 @@
+//#define LOCAL
+
+#if LOCAL
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+#endif
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ConsoleApplication1
+{
+    class Program
+    {
+        const double EPS = 0.0001;
+
+        static void Main(string[] args)
+        {
+            //polygon
+            var polygons = new List<Polygon>();
+            var n = Int32.Parse(Console.ReadLine());
+            for (int i = 0; i < n; i++)
+            {
+                var polygon = new Polygon();
+                var v = Int32.Parse(Console.ReadLine());
+                for (int j = 0; j < v; j++)
+                {
+                    var str = Console.ReadLine().Split();
+                    var x = Int32.Parse(str[0]);
+                    var y = Int32.Parse(str[1]);
+                    polygon.AddPoint(new Pt(x, y));
+                }
+                polygons.Add(polygon);
+            }
+
+            //ellipses
+            var ellipses = new List<Ellipse>();
+            var m = Int32.Parse(Console.ReadLine());
+            for (int i = 0; i < m; i++)
+            {
+                var str = Console.ReadLine().Split();
+                var x1 = Int32.Parse(str[0]);
+                var y1 = Int32.Parse(str[1]);
+                var x2 = Int32.Parse(str[2]);
+                var y2 = Int32.Parse(str[3]);
+                var a = Int32.Parse(str[4]);
+                ellipses.Add(new Ellipse(x1, y1, x2, y2, a));
+            }
+
+            var lx = -10001.0;
+            var rx = 10001.0;
+            var ly = -10001.0;
+            var ry = 10001.0;
+
+            // ternary search in x
+            for (int i = 0; i < 48; i++)
+            {
+                var x1 = lx + (rx - lx) / 3;
+                var x2 = rx - (rx - lx) / 3;
+
+                var ly_x1 = -10001.0;
+                var ry_x1 = 10001.0;
+                var x1Score = GetScore_TernaryY(ref ly_x1, ref ry_x1, x1, ellipses, polygons);
+
+                var ly_x2 = -10001.0;
+                var ry_x2 = 10001.0;
+                var x2Score = GetScore_TernaryY(ref ly_x2, ref ry_x2, x2, ellipses, polygons);
+
+                if (x2Score > x1Score)
+                {
+                    //remove right
+                    rx = x2;
+                }
+                else
+                {
+                    //remove left
+                    lx = x1;
+                    ly = ly_x2;
+                    ry = ry_x2;
+                }
+            }
+
+            Console.WriteLine(lx);
+            Console.WriteLine(ly);
+        }
+
+        static double GetScore_TernaryY(ref double ly, ref double ry, double x, List<Ellipse> ellipses, List<Polygon> polygons)
+        {
+            var score = GetScore(x, ly, ellipses, polygons);
+            for (int i = 0; i < 48; i++)
+            {
+                var y1 = ly + (ry - ly) / 3;
+                var y2 = ry - (ry - ly) / 3;
+
+                var y1Score = GetScore(x, y1, ellipses, polygons);
+                var y2Score = GetScore(x, y2, ellipses, polygons);
+
+                if (y2Score == y1Score)
+                {
+                    var aa = GetScore(x, y1, ellipses, polygons);
+                }
+
+                if (y2Score > y1Score)
+                {
+                    //remove right
+                    ry = y2;
+                }
+                else
+                {
+                    //remove left
+                    ly = y1;
+                    score = y2Score;
+                }
+            }
+            return score;
+        }
+
+        static double GetScore(double x, double y, List<Ellipse> ellipses, List<Polygon> polygons)
+        {
+            return GetScore(new Pt(x, y), ellipses, polygons);
+        }
+
+        static double GetScore(Pt pt, List<Ellipse> ellipses, List<Polygon> polygons)
+        {
+            return ellipses.Sum(e => e.GetDist(pt)) + polygons.Sum(p => p.GetDist(pt));
+        }
+    }
+
+
+    public class Polygon
+    {
+        public List<Edge> Edges;
+
+        List<Pt> _points;
+
+        public Polygon()
+        {
+            Edges = new List<Edge>();
+            _points = new List<Pt>();
+        }
+
+        public void AddPoint(Pt point)
+        {
+            _points.Add(point);
+            if (_points.Count >= 2)
+            {
+                Edges.Add(new Edge(_points[_points.Count() - 2], _points[_points.Count() - 1]));
+            }
+        }
+
+        public double GetDist(Pt pt)
+        {
+            double minDist = Double.MaxValue;
+            var inside = true;
+
+            for (int i = 0; i < Edges.Count(); i++)
+            {
+                if (!IsCcw(pt, Edges[i].p1, Edges[i].p2))
+                {
+                    inside = false;
+                }
+
+                minDist = Math.Min(minDist, Edges[i].Dist(pt));
+            }
+
+            return inside ? 0 : minDist;
+        }
+
+        public bool IsCcw(Pt p, Pt p1, Pt p2)
+        {
+            return Pt.Ccw(p, p1, p2) == 1;
+        }
+    }
+
+    public class Ellipse
+    {
+        public Pt P1;
+        public Pt P2;
+        public double A;
+        public double D;
+
+        public Ellipse(double x1, double y1, double x2, double y2, double a)
+        {
+            P1 = new Pt(x1, y1);
+            P2 = new Pt(x2, y2);
+            A = a;
+            D = 2 * a;
+        }
+
+        public double GetDist(Pt pt)
+        {
+            var ret = P1.Dist(pt) + P2.Dist(pt);
+            return ret <= D ? 0 : (ret - D) / 2;
+        }
+    }
+
+    /// <summary>
+    /// Pont/Vector class for 2D 
+    /// </summary>
+    public class Pt
+    {
+        public double X;
+        public double Y;
+
+        public Pt(double x, double y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        public static Pt operator +(Pt v1, Pt v2)
+        {
+            return new Pt(DoubleUtil.Add(v1.X, v2.X), DoubleUtil.Add(v1.Y, v2.Y));
+        }
+        public static Pt operator -(Pt v1, Pt v2)
+        {
+            return new Pt(DoubleUtil.Add(v1.X, -v2.X), DoubleUtil.Add(v1.Y, -v2.Y));
+        }
+        public static Pt operator *(Pt v1, Pt v2)
+        {
+            return new Pt(v1.X * v2.X - v1.Y * v2.Y, v1.X * v2.Y + v2.X * v1.Y);
+        }
+        public static Pt operator *(Pt v, double d)
+        {
+            return new Pt(v.X * d, v.Y * d);
+        }
+        public static Pt operator /(Pt v, double d)
+        {
+            return new Pt(v.X / d, v.Y / d);
+        }
+
+        /// <summary>
+        /// Dot product of two vectors: O -> this and O -> other
+        ///  a dot b = |a| |b| cos(theta) = ax bx + ax by
+        ///  zero if two vectors run orthogonally
+        /// </summary>
+        public double Dot(Pt other)
+        {
+            return DoubleUtil.Add(this.X * other.X, this.Y * other.Y);
+        }
+
+        /// <summary>
+        /// Cross(det) product of two vectors: O -> this and O -> other
+        ///  a x b = |a| |b| sin(theta) = ax by - ay bx
+        ///  zero if two vectors run parallelly
+        /// </summary>
+        public double Cross(Pt other)
+        {
+            return DoubleUtil.Add(this.X * other.Y, -this.Y * other.X);
+        }
+
+        /// <summary>
+        /// point q exists on line p1-p2?
+        /// </summary>
+        public static bool OnSeg(Pt p1, Pt p2, Pt q)
+        {
+            return (p1 - q).Cross(p2 - q) == 0 && (p1 - q).Dot(p2 - q) <= 0;
+        }
+
+        /// <summary>
+        /// crosssing point of line p1-p2 and q1-q2
+        /// </summary>
+        public static Pt Intersect(Pt p1, Pt p2, Pt q1, Pt q2)
+        {
+            return p1 + (p2 - p1) * ((q2 - q1).Cross(q1 - p1) / (q2 - q1).Cross(p2 - p1));
+        }
+        public static bool HasIntersect(Pt p1, Pt p2, Pt q1, Pt q2)
+        {
+            if ((p1 - q1).Cross(p2 - q2) == 0)
+            {
+                return OnSeg(p1, q1, p2) || OnSeg(p1, q1, q2) || OnSeg(p2, q2, p1) || OnSeg(p2, q2, q1);
+            }
+            else
+            {
+                var r = Intersect(p1, q1, p2, q2);
+                return OnSeg(p1, p2, r) && OnSeg(q1, q2, r);
+            }
+        }
+
+        public static bool operator ==(Pt x, Pt y)
+        {
+            return (DoubleUtil.Eq(x.X, y.X) && DoubleUtil.Eq(x.Y, y.Y));
+        }
+
+        public static bool operator !=(Pt x, Pt y)
+        {
+            return (!DoubleUtil.Eq(x.X, y.X) || !DoubleUtil.Eq(x.Y, y.Y));
+        }
+        public double Norm()
+        {
+            return Math.Sqrt(X * X + Y * Y);
+        }
+        public double Dist(Pt other)
+        {
+            return (this - other).Norm();
+        }
+        public static double Dist(Pt v1, Pt v2)
+        {
+            return v1.Dist(v2);
+        }
+
+        public static int Ccw(Pt a, Pt b, Pt c)
+        {
+            b -= a;
+            c -= a;
+            if (b.Cross(c) > 0) return 1;   //counter clockwise
+            if (b.Cross(c) < 0) return -1;  //clockwise
+            if (b.Dot(c) < 0) return 2;     //c--a--b on line
+            if (b.Norm() < c.Norm()) return -2; //a--b--c on line
+            return 0;
+        }
+
+        //ger radian angle of vector A and B
+        public static double GetAngleOf2Vectors(Pt A, Pt B)
+        {
+            double length_A = get_vector_length(A);
+            double length_B = get_vector_length(B);
+
+            double cos_sita = A.Dot(B) / (length_A * length_B);
+
+            double sita = Math.Acos(cos_sita);
+
+            //degree in 0^180
+            //sita = sita * 180.0 / PI;
+
+            return sita;
+        }
+
+        static double get_vector_length(Pt v)
+        {
+            return Math.Pow((v.X * v.X) + (v.Y * v.Y), 0.5);
+        }
+    }
+
+    public class Edge
+    {
+        public Pt p1, p2, vect;    //vector p1 -> p2
+        public double norm;
+
+        public Edge(Pt p1n, Pt p2n)
+        {
+            p1 = p1n;
+            p2 = p2n;
+            vect = p2 - p1;
+            norm = vect.Norm();
+        }
+        public bool HasIntersect(Edge other)
+        {
+            ////do edges "this" and "other" intersect?
+            if (Math.Min(p1.X, p2.X) > Math.Max(other.p1.X, other.p2.X)) return false;
+            if (Math.Max(p1.X, p2.X) < Math.Min(other.p1.X, other.p2.X)) return false;
+            if (Math.Min(p1.Y, p2.Y) > Math.Max(other.p1.Y, other.p2.Y)) return false;
+            if (Math.Max(p1.Y, p2.Y) < Math.Min(other.p1.Y, other.p2.Y)) return false;
+
+            int den = (int)(other.vect.Y * vect.X - other.vect.X * vect.Y);
+            int num1 = (int)(other.vect.X * (p1.Y - other.p1.Y) - other.vect.Y * (p1.X - other.p1.X));
+            int num2 = (int)(vect.X * (p1.Y - other.p1.Y) - vect.Y * (p1.X - other.p1.X));
+
+            //parallel edges
+            if (den == 0)
+            {
+                if (Math.Min(other.dist2(this), dist2(other)) > 0)
+                    return false;
+                //on the same line - "not intersect" only if one of the vertices is common,
+                //and the other doesn't belong to the line
+                if ((this.p1 == other.p1 && DoubleUtil.Eq(Pt.Dist(this.p2, other.p2), this.norm + other.norm)) ||
+                    (this.p1 == other.p2 && DoubleUtil.Eq(Pt.Dist(this.p2, other.p1), this.norm + other.norm)) ||
+                    (this.p2 == other.p1 && DoubleUtil.Eq(Pt.Dist(this.p1, other.p2), this.norm + other.norm)) ||
+                    (this.p2 == other.p2 && DoubleUtil.Eq(Pt.Dist(this.p1, other.p1), this.norm + other.norm)))
+                    return false;
+                return true;
+            }
+
+            //common vertices
+            if (this.p1 == other.p1 || this.p1 == other.p2 || this.p2 == other.p1 || this.p2 == other.p2)
+                return false;
+
+            double u1 = (double)num1 / den;
+            double u2 = (double)num2 / den;
+            if (u1 < 0 || u1 > 1 || u2 < 0 || u2 > 1)
+                return false;
+            return true;
+        }
+        public double Dist(Pt p)
+        {
+            //distance from p to the edge
+            if (vect.Dot(p - p1) <= 0)
+                return p.Dist(p1);         //from p to p1
+            if (vect.Dot(p - p2) >= 0)
+                return p.Dist(p2);         //from p to p2
+            //distance to the line itself
+            return Math.Abs(-vect.Y * p.X + vect.X * p.Y + p1.X * p2.Y - p1.Y * p2.X) / norm;
+        }
+        private double dist2(Edge other)
+        {
+            //distance from the closest of the endpoints of "other" to "this"
+            return Math.Min(Dist(other.p1), Dist(other.p2));
+        }
+        public Pt Intersect(Edge other)
+        {
+            return Pt.Intersect(this.p1, this.p2, other.p1, other.p2);
+        }
+    }
+
+    public class DoubleUtil
+    {
+        private static double EPS = 1e-10;
+
+        public static double Add(double a, double b)
+        {
+            if (Math.Abs(a + b) < EPS * (Math.Abs(a) + Math.Abs(b))) return 0;
+            return a + b;
+        }
+
+        public static bool Eq(double a, double b)
+        {
+            return Math.Abs(a - b) < 1e-9;
+        }
+    }
+}

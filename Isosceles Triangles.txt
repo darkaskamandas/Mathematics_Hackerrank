@@ -1,0 +1,80 @@
+using System;
+using System.IO;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            StreamReader sr = new StreamReader(Console.OpenStandardInput());
+            StreamWriter sw = new StreamWriter(Console.OpenStandardOutput());
+            int t = Convert.ToInt32(sr.ReadLine());
+
+            for (int i = 0; i < t; i++)
+            {
+                string input = sr.ReadLine();
+                bool[] vertices = new bool[input.Length];
+
+                for (int j = 0; j < input.Length; j++)
+                    vertices[j] = input[j] == '1';
+
+                sw.WriteLine("Case {0}: {1}", i + 1, Solve(vertices));
+            }
+
+            sw.Flush();
+        }
+
+        static long Solve(bool[] vertices)
+        {
+            int n = vertices.Length, k = (n - 1) / 2;
+            long total = (long)n * k, sum = 0, sum2 = 0;
+
+            if (n % 2 == 1)
+            {
+                for (int i = 0; i < n; i++)
+                    if (vertices[i])
+                        sum2++;
+
+                sum = sum2 * (n - sum2) / 2 * 3;
+            }
+            else
+            {
+                int count1 = 0, count2 = 0, count3 = 0;
+
+                for (int i = 0; i <= k; i++)
+                {
+                    count1 += vertices[i] ? 1 : 0;
+                    count2 += vertices[i * 2] ? 1 : 0;
+                    count3 += vertices[i * 2 + 1] ? 1 : 0;
+                }
+
+                for (int i = 0; i < n; i++)
+                {
+                    sum += (vertices[i] ? k + 1 - count1 : count1) * 2;
+                    sum2 += (vertices[i] ? k + 1 - count2 : count2);
+
+                    int index1 = (i + k + 1) % n, index2 = (index1 + k + 1) % n;
+                    count1 += vertices[index1] ? 1 : 0;
+                    count1 -= vertices[i] ? 1 : 0;
+                    count2 += vertices[index2] ? 1 : 0;
+                    count2 -= vertices[i] ? 1 : 0;
+                    int t = count2; count2 = count3; count3 = t;
+                }
+
+                sum = (sum + sum2) / 2;
+            }
+
+            if (n % 3 == 0)
+            {
+                total -= n / 3 * 2;
+
+                for (int i = 0; i < n; i++)
+                    if (vertices[i] != vertices[(i + n / 3) % n])
+                        sum--;
+            }
+
+            return total - sum;
+        }
+    }
+}

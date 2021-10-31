@@ -1,0 +1,137 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        struct Line { public int A, B;        }
+
+        class Node
+        {
+            public int Id, Start, End;
+            public int RightId, LeftId;
+            public List<Line> Convex = new List<Line>();
+            public List<decimal> RightX = new List<decimal>();
+        }
+
+        static List<Node> Nodes = new List<Node>();
+        static void Main(string[] args)
+        {
+
+            StreamReader sr = new StreamReader(Console.OpenStandardInput());
+            StreamWriter sw = new StreamWriter(Console.OpenStandardOutput());
+            int n = Convert.ToInt32(sr.ReadLine());
+
+            for (int i = 0; i < n; i++)
+            {
+                string[] input = sr.ReadLine().Split(' ');
+                Line current = new Line { A = Convert.ToInt32(input[0]), B = Convert.ToInt32(input[1]) };
+                Node node = new Node { Start = i, End = i, Id = i };
+                node.Convex.Add(current);
+                node.RightX.Add(long.MaxValue);
+                Nodes.Add(node);
+            }
+
+            int rootId = BuildTree(0, Nodes.Count - 1);
+            int q = Convert.ToInt32(sr.ReadLine());
+
+            for (int i = 0; i < q; i++)
+            {
+                string[] input = sr.ReadLine().Split(' ');
+                int s = Convert.ToInt32(input[0]) - 1;
+                int e = Convert.ToInt32(input[1]) - 1;
+                int x = Convert.ToInt32(input[2]);
+                int y = Convert.ToInt32(input[3]);
+
+                if (Query(rootId, s, e, x, y))
+                    sw.WriteLine("YES");
+                else
+                    sw.WriteLine("NO");
+            }
+
+            sw.Flush();
+        }
+
+        static int BuildTree(int start, int end)
+        {
+            if (end < start) return -1;
+            if (start == end) return Nodes[start].Id;
+
+            int mid = (start + end) >> 1;
+            Node current = new Node { Start = start, End = end };
+            current.LeftId = BuildTree(start, mid);
+            current.RightId = BuildTree(mid + 1, end);
+            current.Id = Nodes.Count;
+            Nodes.Add(current);
+
+            var left = Nodes[current.LeftId];
+            var right = Nodes[current.RightId];
+            Line[] stack = new Line[left.Convex.Count + right.Convex.Count];
+            int endIndex = -1, indexR = 0;
+
+            for (int i = 0; i < left.Convex.Count; i++)
+            {
+                Line cLeft = left.Convex[i];
+
+                while (indexR < right.Convex.Count && right.Convex[indexR].A < cLeft.A)
+                {
+                    Line cRight = right.Convex[indexR];
+
+                    while (endIndex > 1 && GetX(cRight, stack[endIndex]) <= GetX(stack[endIndex], stack[endIndex - 1])) { endIndex--; }
+                    stack[++endIndex] = cRight;
+                    indexR++;
+                }
+
+                while (endIndex > 1 && GetX(cLeft, stack[endIndex]) <= GetX(stack[endIndex], stack[endIndex - 1])) { endIndex--; }
+                stack[++endIndex] = cLeft;
+            }
+
+            while (indexR < right.Convex.Count)
+            {
+                Line cRight = right.Convex[indexR];
+
+                while (endIndex > 1 && GetX(cRight, stack[endIndex]) <= GetX(stack[endIndex], stack[endIndex - 1])) { endIndex--; }                    
+                stack[++endIndex] = cRight;
+                indexR++;
+            }
+
+            for (int i = 0; i <= endIndex; i++)
+                current.Convex.Add(stack[i]);
+
+            for (int i = 0; i < current.Convex.Count - 1; i++)
+                current.RightX.Add(GetX(current.Convex[i], current.Convex[i + 1]));
+
+            current.RightX.Add(long.MaxValue);
+            return current.Id;
+        }
+
+        static bool Query(int nodeId, int s, int e, int x, int y)
+        {
+            var node = Nodes[nodeId];
+
+            if (e < node.Start || s > node.End)
+                return false;
+
+            if (node.Start == s && node.End == e)
+            {
+                int index = node.RightX.BinarySearch(x);
+                if (index < 0) index = -index - 1;
+                Line line = node.Convex[index];
+                long k = (long)line.A * x + line.B;
+                return k > y;
+            }
+
+            if (Query(node.LeftId, s, Math.Min(Nodes[node.LeftId].End, e), x, y))
+                return true;
+
+            if (Query(node.RightId, Math.Max(Nodes[node.RightId].Start, s), e, x, y))
+                return true;
+
+            return false;
+        }
+
+        static decimal GetX(Line l1, Line l2) { return ((decimal)l2.B - l1.B) / (l1.A - l2.A); }
+    }
+}

@@ -1,0 +1,670 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Text;
+using System.Threading;
+
+namespace HR
+{
+    public class Solution
+    {
+        static bool Debugging = false;
+
+        static string GlobalFolder = @"c:\FH\Temp\HackerRank\Mathematics";
+        static string ExampleFolder;
+        static string ExampleName;
+        static int CaseNumber;
+
+        static string strFileInput;
+        static string strFileExpectedOutput;
+        static string strFileOutput;
+
+        static StreamReader fileInput = null;
+        static StreamReader fileExpectedOutput = null;
+        static StreamWriter fileOutput = null;
+
+        static string strLine;
+        static string strParameter;
+        static string[] strData;
+        static int ErrorCounter = 0;
+        static string strResultExpected;
+
+        public static Statistics Stat1 = new Statistics();
+        public static Statistics Stat2 = new Statistics();
+        public static uint mod67 = 1000007;
+        public static long mod97 = 1000000007;
+        public static long mod99 = 1000000009;
+        public static uint mod63 = 100003;
+
+        static Dictionary<string, long> dic = new Dictionary<string, long>();
+        static Dictionary<string, long> dicLongLong = new Dictionary<string, long>();
+
+        //public static NumberTheory F1 = new NumberTheory();
+        static Stopwatch sw = new Stopwatch();
+
+        static void Main(string[] args)
+        {
+            sw.Start();
+
+            SolveJatJ();
+            //SolveGQ();
+            //SolveBH();
+
+            //Console.WriteLine("Time: " + sw.ElapsedMilliseconds.ToString());
+
+            //if (fileOutput != null)
+            //{
+            //    fileOutput.Close();
+            //}
+        }
+
+
+        #region Jim and the Challenge
+
+        public static void SolveJatJ()
+        {
+            ExampleFolder = "Geometry";
+            ExampleName = "Jim and the Challenge";
+            CaseNumber = 5;  // -1, 1 versus   
+            Debugging = File.Exists(InputFile);
+
+            //StreamWriter strw = new StreamWriter(Console.OpenStandardOutput());
+            //StreamWriter strw = new StreamWriter(@"c:\FH\Temp\HackerRank\Mathematics\Algebra\The Black Box\Output.txt");
+            //Console.SetOut(strw);
+
+            strLine = ReadLineInput();
+            strData = strLine.Split(' ');
+
+            int n = Convert.ToInt32(strData[0]);
+            int d = Convert.ToInt16(strData[1]);
+
+            long[] H = new long[n];
+            long[,] X = new long[n, d];
+            long Res;
+            for (int i = 0; i < n; i++)
+            {
+                strLine = ReadLineInput();
+                strData = strLine.Split(' ');
+
+                H[i] = Convert.ToInt64(strData[0]);
+
+                for (int j = 1; j < strData.Length; j++)
+                {
+                    X[i, j - 1] = Convert.ToInt64(strData[j]);
+                }
+            }
+
+            //Res = SolveJatJBruteForce1(d, H, X);
+            //Res = SolveJatJBruteForce2(d, H, X);
+            Res = SolveJatJEfficient(d, H, X);
+            strLine = Res.ToString();
+
+            strParameter = ""; // string.Format("L={0}, R={1}, R-L={4}, x={2}, y={3}", L, R, x, y, R - L);
+            Console.WriteLine(strLine); // + ": " + strParameter);
+
+            //string strExpectedOutput = CheckOutput(strLine, out strResultExpected);
+            //if (strExpectedOutput != string.Empty)
+            //{
+            //    ErrorCounter++;
+            //    Console.WriteLine(string.Format("Fehler({0},{1}): Exp={2}, Res={3}, Params:({4})", -1, ErrorCounter, strExpectedOutput, strLine, strParameter));
+            //}
+
+            //Console.SetOut(strw);
+
+            //if (i == Max - 1)
+            //{
+            //    strw.Write(strLine);
+            //}
+            //else
+            //{
+            //strw.WriteLine(strLine);
+            //}
+
+            //strw.Flush();
+            //strw.Close();
+        }
+
+        private static long SolveJatJBruteForce1(int d, long[] H, long[,] X)
+        {
+            long Res = 0;
+            for (int i = 0; i < H.Length; i++)
+            {
+                for (int j = i+1; j < H.Length; j++)
+                {
+                    long Sum = 0;
+                    for (int k = 0; k < d; k++)
+                    {
+                        Sum = (Sum + (Math.Abs(X[i, k] - X[j, k]) % mod99) % mod99);
+                    }
+                    Res += ((((H[i] * H[j]) % mod99) * Sum) % mod99);
+                }
+            }
+            Res = (Res + mod99) % mod99;
+            return Res;
+        }
+
+        private static long SolveJatJBruteForce2(int d, long[] H, long[,] X)
+        {
+            long Res = 0;
+            for (int k = 0; k < d; k++)
+            {
+                for (int i = 0; i < H.Length; i++)
+                {
+                    for (int j = i + 1; j < H.Length; j++)
+                    {
+                        Res = (Res + (((H[i] * H[j]) % mod99) * (Math.Abs(X[i, k] - X[j, k]) % mod99)) % mod99) % mod99;
+                    }
+                }
+            }
+            Res = (Res + mod99) % mod99;
+            return Res;
+        }
+
+        private static long SolveJatJEfficient(int d, long[] H, long[,] X)
+        {
+            long Result = 0;
+            for (int k = 0; k < d; k++)
+            {
+                var ListSorted = new List<KeyValuePair<long, long>>();
+
+                long[] XSorted = new long[H.Length];
+                for (int i = 0; i < XSorted.Length; i++)
+                {
+                    XSorted[i] = X[i, k];
+                    ListSorted.Add(new KeyValuePair<long, long>(X[i, k], H[i]));
+                }
+
+                ListSorted.Sort((x, y) => x.Key.CompareTo(y.Key));
+                Array.Sort(XSorted);
+
+                long SumD = 0;
+                long SumH = 0;
+                for (int i = 0; i < ListSorted.Count; i++)
+                {
+                    Result = (Result + ((((SumH * ListSorted[i].Key) % mod99 - SumD) % mod99) * ListSorted[i].Value) % mod99) % mod99;
+                    SumD = (SumD + ListSorted[i].Key * ListSorted[i].Value) % mod99;
+                    SumH = (SumH + ListSorted[i].Value) % mod99;
+                }
+            }
+
+            Result = (Result + mod99) % mod99;
+
+            return Result;
+        }
+
+        #endregion
+
+
+        #region Geometry Queries
+
+        // Sortieren der Geraden nach k und d
+        // Bei gleichem k wird nur diejenige Gerade berücksichtigt, die das maximal d hat
+        // Erstellen eines Polygon auf Basis der 1. Gerade (von int.MinValue bis int.MaxValue)
+        // Iteriere über die restlichen Geraden
+        //      Suche mittels binärer Suche den Schnittpunkt mit dem Polygon, der den kleinsten x-Wert hat und auf einem Polygonsegment liegt
+        //      Entferne Polygonsegmente, die weiter rechts liegen und füge die eue Gerade mit dem Schnittpunkt zum Polygon hinzu
+        // Resultat: Polygonliste mit korrespondierenden Geraden ("konvexe Hülle")
+        // Überprüfung eines Punktes
+        //      Suche mittels binärer Suche das entsprechenden Segment
+        //      Überprüfe für dieses, ob der Punkt unterhalb der Gerade liegt 
+        public static void SolveGQ()
+        {
+            ExampleFolder = "Geometry";
+            ExampleName = "Geometry Queries";
+            CaseNumber = 10;  // -1, 0 versus 10  
+            Debugging = File.Exists(InputFile);
+
+            //StreamWriter strw = new StreamWriter(Console.OpenStandardOutput());
+            //StreamWriter strw = new StreamWriter(@"c:\FH\Temp\HackerRank\Mathematics\Algebra\The Black Box\Output.txt");
+            //Console.SetOut(strw);
+
+            strLine = ReadLineInput();
+            int N = Convert.ToInt32(strLine);
+
+            int[] k = new int[N + 1];
+            int[] d = new int[N + 1];
+            for (int i = 1; i <= N; i++)
+			{
+			    strLine = ReadLineInput();
+                strData = strLine.Split(' ');
+
+                k[i] = Convert.ToInt32(strData[0]);
+                d[i] = Convert.ToInt32(strData[1]);
+			}
+
+            strLine = ReadLineInput();
+            int Q = Convert.ToInt32(strLine);
+
+            int L; int R;
+            long x; long y; long ys;
+            bool OK;
+            for (int i = 0; i < Q; i++)
+            {
+                strLine = ReadLineInput();
+                strData = strLine.Split(' ');
+
+                L = Convert.ToInt32(strData[0]);
+                R = Convert.ToInt32(strData[1]);
+                x = Convert.ToInt64(strData[2]);
+                y = Convert.ToInt64(strData[3]);
+
+                OK = false;
+                for (int j = L; j <= R; j++)
+                {
+                    //ys = k[j] * x + d[j];
+                    if (y - k[j] * x - d[j] < 0)
+                    {
+                        OK = true;
+                        break;
+                    }
+                }
+
+                if (OK)
+                {
+                    strLine = "YES";
+                }
+                else
+                {
+                    strLine = "NO";
+                }
+                //strParameter = string.Format("L={0}, R={1}, R-L={4}, x={2}, y={3}", L, R, x, y, R - L);
+                //Console.WriteLine(strLine); // + ": " + strParameter);
+
+                //string strExpectedOutput = CheckOutput(strLine, out strResultExpected);
+                //if ((strExpectedOutput != string.Empty) && (R - L <= 2))
+                //{
+                //    ErrorCounter++;
+                //    Console.WriteLine(string.Format("Fehler({0},{1}): Exp={2}, Res={3}, Params:({4})", i, ErrorCounter, strExpectedOutput, strLine, strParameter));
+                //}
+            }
+            
+            //Console.SetOut(strw);
+
+            //if (i == Max - 1)
+            //{
+            //    strw.Write(strLine);
+            //}
+            //else
+            //{
+            //strw.WriteLine(strLine);
+            //}
+
+            //strw.Flush();
+            //strw.Close();
+        }
+
+        #endregion
+
+        #region ReadWrite
+
+        public static BigInteger BIConvert(string strNumber)
+        {
+            BigInteger N;
+            bool b = true;
+            b = BigInteger.TryParse(strNumber, out N);
+            return N;
+        }
+
+        public static ulong ConvertString2Long(string Number, ulong m)
+        {
+            ulong Result = 0;
+
+            for (int i = 0; i < Number.Length; i++)
+            {
+                char c = Number[i];
+                ulong Digit = (ulong)(c - '0');
+                Result = ((Result * 10) + Digit) % m;
+            }
+
+            return Result;
+        }
+
+        static string InputFile
+        {
+            get
+            {
+                strFileInput = GlobalFolder + @"\" + ExampleFolder + @"\" + ExampleName + @"\";
+                string CaseName = "Input";
+                if (CaseNumber >= 0)
+                {
+                    CaseName += "%" + CaseNumber.ToString();
+                }
+                strFileInput += CaseName + ".txt";
+
+                return strFileInput;
+            }
+        }
+
+        static string ExpectedOutput
+        {
+            get
+            {
+                strFileInput = GlobalFolder + @"\" + ExampleFolder + @"\" + ExampleName + @"\";
+                string CaseName = "ExpectedOutput";
+                if (CaseNumber >= 0)
+                {
+                    CaseName += "%" + CaseNumber.ToString();
+                }
+                strFileInput += CaseName + ".txt";
+
+                return strFileInput;
+            }
+        }
+
+        static string OutputFile
+        {
+            get
+            {
+                strFileInput = GlobalFolder + @"\" + ExampleFolder + @"\" + ExampleName + @"\";
+                string CaseName = "Output";
+                if (CaseNumber >= 0)
+                {
+                    CaseName += "%" + CaseNumber.ToString();
+                }
+                strFileInput += CaseName + ".txt";
+
+                return strFileInput;
+            }
+        }
+
+        static string ReadLineInput()
+        {
+            string strLine;
+            if (Debugging)
+            {
+                if (fileInput == null)
+                {
+                    string strFileInput = InputFile;
+                    fileInput = new StreamReader(strFileInput);
+                }
+                strLine = fileInput.ReadLine();
+            }
+            else
+            {
+                strLine = Console.ReadLine();
+            }
+
+            if (!string.IsNullOrEmpty(strLine))
+            {
+                strLine = strLine.TrimEnd();
+            }
+
+            return strLine;
+        }
+
+        static string CheckOutput(string strResult,
+                                  out string strResultExpected)
+        {
+            string strLine = ReadLineExpectedOutput();
+            //string[] strData = strLine.Split(' ');
+            //string strResultExpected = strData[0];
+            strResultExpected = strLine; //.TrimEnd();
+
+            //Stat1.AddString(strResultExpected, 1);
+
+            bool Result = (strResult == strResultExpected);
+            if (Result)
+            {
+                return string.Empty;
+            }
+            else
+            {
+                return strResultExpected;
+            }
+        }
+
+        static string ReadLineExpectedOutput()
+        {
+            if (File.Exists(ExpectedOutput))
+            {
+                if (fileExpectedOutput == null)
+                {
+                    fileExpectedOutput = new StreamReader(ExpectedOutput);
+                }
+                return fileExpectedOutput.ReadLine();
+            }
+            return string.Empty;
+        }
+
+        static void WriteLineOutput(string strLine, bool last = false)
+        {
+            if (File.Exists(OutputFile))
+            {
+                if (fileOutput == null)
+                {
+                    fileOutput = new StreamWriter(OutputFile);
+                }
+                fileOutput.WriteLine(strLine);
+                Console.WriteLine(strLine);
+            }
+            else
+            {
+                Console.WriteLine(strLine);
+            }
+        }
+
+        #endregion
+    }
+
+    #region Statistics
+
+    public class Statistics
+    {
+        public Dictionary<BigInteger, BigInteger> dicBB = new Dictionary<BigInteger, BigInteger>();
+        public Dictionary<BigInteger, long> dicBI = new Dictionary<BigInteger, long>();
+        public Dictionary<string, long> dicString = new Dictionary<string, long>();
+        public Dictionary<ulong, ulong> dicULong = new Dictionary<ulong, ulong>();
+
+        public void AddBB(BigInteger N, BigInteger counter)
+        {
+            if (!this.dicBB.ContainsKey(N))
+            {
+                this.dicBB.Add(N, counter);
+            }
+            else
+            {
+                dicBB[N] += counter;
+            }
+        }
+
+        public void AddBI(BigInteger N, long counter)
+        {
+            if (!this.dicBI.ContainsKey(N))
+            {
+                this.dicBI.Add(N, counter);
+            }
+            else
+            {
+                dicBI[N] += counter;
+            }
+        }
+
+        public void AddUlong(ulong N, ulong counter)
+        {
+            if (!this.dicULong.ContainsKey(N))
+            {
+                this.dicULong.Add(N, counter);
+            }
+            else
+            {
+                dicULong[N] += counter;
+            }
+        }
+
+        public void AddString(string N, long counter)
+        {
+            if (!this.dicString.ContainsKey(N))
+            {
+                this.dicString.Add(N, counter);
+            }
+            else
+            {
+                dicString[N] += counter;
+            }
+        }
+
+        public static bool SubsetULong(Statistics S1, Statistics S2)
+        {
+            bool Subset = true;
+
+            foreach (KeyValuePair<ulong, ulong> Pair in S1.dicULong)
+            {
+                if (S2.dicULong.ContainsKey(Pair.Key))
+                {
+                    if (Pair.Value != S2.dicULong[Pair.Key])
+                    {
+                        Subset = false;
+                    }
+                }
+                else
+                {
+                    Subset = false;
+                }
+            }
+
+            return Subset;
+        }
+
+        public static bool EqualULong(Statistics S1, Statistics S2)
+        {
+            bool Equal = Statistics.SubsetULong(S1, S2) && Statistics.SubsetULong(S2, S1);
+            return Equal;
+        }
+
+        public void Clear()
+        {
+            dicBB = new Dictionary<BigInteger, BigInteger>();
+            dicBI = new Dictionary<BigInteger, long>();
+            dicString = new Dictionary<string, long>();
+            dicULong = new Dictionary<ulong, ulong>();
+        }
+
+        public string Print()
+        {
+            string strResult = string.Empty;
+
+            strResult += string.Join(",", this.dicBI.Select(item => item).OrderByDescending(item => item.Value).ToArray()) + Environment.NewLine;
+            strResult += string.Join(",", this.dicBI.Select(item => item).OrderBy(item => item.Key).ToArray()) + Environment.NewLine;
+            BigInteger BISum = (BigInteger)this.dicBI.Sum(item => (decimal)item.Key * (decimal)item.Value);
+            strResult += "Operations: " + BISum.ToString() + Environment.NewLine;
+
+            return strResult;
+        }
+    }
+
+    #endregion
+
+    #region Pair_Point
+
+    public class Pair
+    {
+        public ulong P;
+        public uint L;
+
+        public Pair(ulong P,
+                    uint L)
+        {
+            this.P = P;
+            this.L = L;
+        }
+
+        public Pair Clone()
+        {
+            return new Pair(this.P, this.L);
+        }
+
+        public override string ToString()
+        {
+            string strReturn = string.Format("({0},{1})", this.P, this.L);
+            return strReturn;
+        }
+    }
+
+    public class Point : IComparable
+    {
+        public double x;
+        public double y;
+        public int Number;
+        public double Weight1;
+        public double Weight2;
+
+        public Point(string strCoordinates,
+                     int Number = -1)
+        {
+            string[] strData = strCoordinates.Split(' ');
+            this.x = Convert.ToInt32(strData[0]);
+            this.y = Convert.ToInt32(strData[1]);
+            this.Number = Number;
+        }
+
+        public Point(double x,
+                     double y,
+                     int Number = -1)
+        {
+            this.x = x;
+            this.y = y;
+            this.Number = Number;
+        }
+
+        private void Init()
+        {
+            this.Number = -1;
+            this.Weight1 = 0;
+            this.Weight2 = 0;
+        }
+
+        public double Weight
+        {
+            get
+            {
+                return this.Weight1 + this.Weight2;
+            }
+        }
+
+        public static bool operator ==(Point P1, Point P2)
+        {
+            return P1.CompareTo(P2) == 0;
+        }
+
+        public static bool operator !=(Point P1, Point P2)
+        {
+            return P1.CompareTo(P2) != 0;
+        }
+
+        public int CompareTo(object obj)
+        {
+            Point P = (Point)obj;
+            int Result = -1;
+            if ((this.x == P.x) && (this.y == P.y))
+            {
+                Result = 0;
+            }
+            return Result;
+        }
+
+        public int CompareByX(Point P1, Point P2)
+        {
+            int Result = P1.x.CompareTo(P2.x);
+            return Result;
+        }
+
+        public int CompareByY(Point P1, Point P2)
+        {
+            int Result = P1.y.CompareTo(P2.y);
+            return Result;
+        }
+
+        public override string ToString()
+        {
+            string strReturn = string.Format("({0},{1}) - Weight({2},{3})", this.x, this.y, this.Weight1, this.Weight2);
+            return strReturn;
+        }
+    }
+
+    #endregion
+
+}

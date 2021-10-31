@@ -1,0 +1,211 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+class Solution
+{
+    private const int MOD = 1000003;
+
+    static void Main(string[] args)
+    {
+        Initialize();
+
+        int T = ReadNextInt();
+        for (int t = 0; t < T; t++)
+        {
+            int N = ReadNextInt();
+            int K = ReadNextInt();
+
+            if (K <= 0 || K > (N - 3))
+            {
+                Console.WriteLine(0);
+            }
+            else
+            {
+                Console.WriteLine(G2(N, K));
+            }
+        }
+    }
+
+    private struct Count
+    {
+        public readonly int value;
+
+        public Count(long v)
+        {
+            v %= MOD;
+            if (v < 0) v = MOD + v;
+            this.value = (int)v;
+        }
+
+        public override string ToString()
+        {
+            return this.value.ToString();
+        }
+
+        public static implicit operator Count(long l)
+        {
+            return new Count(l);
+        }
+
+        public static Count operator +(Count a, Count b)
+        {
+            return new Count((long)a.value + (long)b.value);
+        }
+
+        public static Count operator -(Count a, Count b)
+        {
+            return new Count((long)a.value - (long)b.value);
+        }
+
+        public static Count operator *(Count a, Count b)
+        {
+            return new Count((long)a.value * (long)b.value);
+        }
+
+        public static Count operator /(Count a, Count b)
+        {
+            if (a.value == 0) return 0;
+
+            if (a.value == b.value) return 1;
+
+            int x = b.value;
+            int y = a.value;
+
+            int xx = MOD;
+            int yy = MOD;
+
+            while (true)
+            {
+                EnsureFirstPairIsSmaller(ref x, ref y, ref xx, ref yy);
+
+                if (x == 1) return y;
+
+                int xxx = xx / x;
+                xx = xx % x;
+                yy = (yy - new Count(y) * xxx).value;
+            }
+        }
+
+        private static void EnsureFirstPairIsSmaller(ref int a, ref int b, ref int x, ref int y)
+        {
+            if (a > x)
+            {
+                int t = a; a = x; x = t;
+                t = b; b = y; y = t;
+            }
+        }
+    }
+
+    private static int ReadNextInt()
+    {
+        int c = Console.Read();
+        while (!char.IsDigit((char)c))
+        {
+            c = Console.Read();
+        }
+
+        int value = 0;
+        do
+        {
+            value *= 10;
+            value += (int)(c - '0');
+        }
+        while (char.IsDigit((char)(c = Console.Read())));
+        return value;
+    }
+
+    private static Count G2(int n, int k)
+    {
+        if (n < 4 || k < 1) return 1;
+        if (k > (n - 3)) return 0;
+
+        if (new Count(k + 1).value == 0)
+        {
+            return G(n, k);
+        }
+        else
+        {
+            return NCHOOSEK(n - 3, k) * NCHOOSEK(n + k - 1, k) / (k + 1);
+        }
+    }
+
+    private static Count G(int n, int k)
+    {
+        return g(n - 2, k + 1);
+    }
+
+    private static Count g(int n, int k)
+    {
+        if (n < 2 || k < 1) return 0;
+        if (k > n) return 0;
+
+        return H(n, k - 1) - G2(n + 2, k - 2);
+    }
+
+    private static Count FACT(int i)
+    {
+        if (i >= MOD) return 0;
+        return FFF[i];
+    }
+
+    private static Count CATALAN(int n)
+    {
+        return NCHOOSEK(2 * n, n) - NCHOOSEK(2 * n, n + 1);
+    }
+
+    private static Count W(int n, int k)
+    {
+        return NCHOOSEK(n + k, 2 * k);
+    }
+
+    private static Count H(int n, int k)
+    {
+        return W(n, k) * CATALAN(k);
+    }
+
+    private static Count NCHOOSEK(int n, int k)
+    {
+        if (k > n) return 0;
+
+        int otherk = n - k;
+        if (otherk < k) k = otherk;
+        if (k == 0) return 1;
+
+        int nPlus = n / MOD;
+        int kPlus = k / MOD;
+
+        Count result = 1;
+
+        if (nPlus != 0 || kPlus != 0)
+        {
+            result = NCHOOSEK(nPlus, kPlus);
+        }
+
+        if (result.value == 0)
+        {
+            return 0;
+        }
+
+        int nn = n % MOD;
+        int kk = k % MOD;
+
+        if (kk > nn) return 0;
+        if (kk == 0) return result;
+        if (kk == nn) return result;
+
+        return result * FACT(nn) / (FACT(kk) * FACT(nn - kk));
+    }
+
+    private static Count[] FFF = new Count[MOD];
+
+    private static void Initialize()
+    {
+        FFF[0] = 1;
+        FFF[1] = 1;
+        for (int i = 2; i < FFF.Length; i++)
+        {
+            FFF[i] = FFF[i - 1] * i;
+        }
+    }
+}

@@ -1,0 +1,64 @@
+using System;
+using System.IO;
+
+namespace Problem51Nod
+{
+    class Program
+    {
+        struct Pair { public long X, Y;}
+        public static void Main(String[] args)
+        {
+            StreamReader sr = new StreamReader(Console.OpenStandardInput());
+            StreamWriter sw = new StreamWriter(Console.OpenStandardOutput());
+            int t = Convert.ToInt32(sr.ReadLine());
+
+            for (int i = 0; i < t; i++)
+            {
+                int n = Convert.ToInt32(sr.ReadLine());
+                Pair[] pairs = new Pair[n];
+
+                string[] inputA = sr.ReadLine().Split(' ');
+                string[] inputB = sr.ReadLine().Split(' ');
+
+                for (int j = 0; j < n; j++)
+                    pairs[j] = new Pair { X = Convert.ToInt32(inputA[j]), Y = Convert.ToInt32(inputB[j]) };
+
+                sw.WriteLine(Solve(pairs));
+            }
+
+            sw.Flush();
+        }
+
+        static long Solve(Pair[] pairs)
+        {
+            long sumX = 0, sumY = 0;
+
+            foreach (var item in pairs)
+            {
+                sumX += item.X;
+                sumY += item.Y;
+            }
+
+            long max = 0;
+
+            foreach (var item in pairs)
+            {
+                long x = 0, y = 0;
+
+                foreach (var sItem in pairs)
+                {
+                    if (item.X * sItem.Y > item.Y * sItem.X || (item.X * sItem.Y == item.Y * sItem.X && item.X * sItem.X + item.Y * sItem.Y > 0))
+                    {
+                        x += sItem.X; y += sItem.Y;
+                    }
+                }
+
+                max = Math.Max(max, x * x + y * y);
+                x = sumX - x; y = sumY - y;
+                max = Math.Max(max, x * x + y * y);
+            }
+
+            return max;
+        }
+    }
+}

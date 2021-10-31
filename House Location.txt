@@ -1,0 +1,137 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+
+    class Solution
+    {
+        static double Distance(double x1, double y1, double x2, double y2)
+        {
+            return Math.Sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+        }
+
+        static string Regularize(double x)
+        {
+            int temp = (int) Math.Round(100*x);
+            string result;
+            if (Math.Abs(temp % 100) > 10 )
+                result = ((temp / 100).ToString()) + "." + (Math.Abs(temp % 100).ToString());
+            else
+                result = ((temp / 100).ToString()) + ".0" + (Math.Abs(temp % 100).ToString());
+            return result;
+
+        }
+
+        static void CalculateSolution(double x1, double y1, double r1, double x2, double y2, double r2)
+        {
+            double A,B,C,x,y;
+
+            if (Distance(x1, y1, x2, y2) > r1 + r2)
+            {
+                Console.WriteLine("Impossible!");
+                return;
+            }
+
+            if (x1 == x2 && y1 == y2)
+            {
+                if (r1 != r2)
+                {
+                    Console.WriteLine("Impossible!");
+                    return;
+                }
+
+                Console.Write(Regularize(x1 - r1));
+                Console.Write(" ");
+                Console.WriteLine(Regularize(y1));
+                
+                return;
+            }
+
+            if (y1 == y2)
+            {
+                x = (r2 * r2 - r1 * r1 - x2 * x2 + x1 * x1) / (2 * (x1 - x2));
+                A = 1;
+                B = -2 * y2;
+                C = x2 * x2 + x1 * x1 - 2 * x2 * x + y2 * y2 - r2 * r2;
+                y = (-B - Math.Sqrt(B * B - 4 * A * C)) / (2 * A);
+                Console.Write(Regularize(x));
+                Console.Write(" ");
+                Console.WriteLine(Regularize(y));
+
+                return;
+            }
+
+
+            double N = (r2 * r2 - r1 * r1 - x2 * x2 + x1 * x1 - y2 * y2 + y1 * y1) / (2 * (y1 - y2));
+            A = (x1 - x2) * (x1 - x2) / (y1 - y2) / (y1 - y2) + 1;
+            B = 2 * (y1 - N) * (x1 - x2) / (y1 - y2) - 2 * x1;
+            C = x1 * x1 + y1 * y1 + N * N - r1 * r1 - 2 * y1 * N;
+
+            if (B * B - 4 * A * C < 0)
+            {
+                Console.WriteLine("Impossible!");
+                return;
+            }
+
+            x = (-B - Math.Sqrt(B * B - 4 * A * C)) / (2 * A);
+            y = N - x * (x1 - x2) / (y1 - y2);
+
+            Console.Write(Regularize(x));
+            Console.Write(" ");
+            Console.WriteLine(Regularize(y));
+
+            return;
+
+        }
+
+
+        static void Main(string[] args)
+        {
+            string line = Console.ReadLine();
+            string[] cutLine = line.Split();
+            double a, b;
+            double.TryParse(cutLine[0], out a);
+            double.TryParse(cutLine[1], out b);
+
+            line = Console.ReadLine();
+            cutLine = line.Split();
+            double xk, yk;
+            double.TryParse(cutLine[0], out xk);
+            double.TryParse(cutLine[1], out yk);
+
+            line = Console.ReadLine();
+            cutLine = line.Split();
+            double xb, yb;
+            double.TryParse(cutLine[0], out xb);
+            double.TryParse(cutLine[1], out yb);
+
+            line = Console.ReadLine();
+            cutLine = line.Split();
+            double xj, yj;
+            double.TryParse(cutLine[0], out xj);
+            double.TryParse(cutLine[1], out yj);
+
+            line = Console.ReadLine();
+            cutLine = line.Split();
+            double xt, yt;
+            double.TryParse(cutLine[0], out xt);
+            double.TryParse(cutLine[1], out yt);
+
+            if (a == 1 || b == 1)
+            {
+                throw new System.ArgumentException("Mediatrice to consider", "original");
+            }
+
+            double x1 = (a * a * xb - xk) / (a * a - 1);
+            double y1 = (a * a * yb - yk) / (a * a - 1);
+            double r1 = a / (a * a - 1) * Math.Sqrt((xk - xb) * (xk - xb) + (yk - yb) * (yk - yb));
+
+            double x2 = (b * b * xt - xj) / (b * b - 1);
+            double y2 = (b * b * yt - yj) / (b * b - 1);
+            double r2 = b / (b * b - 1) * Math.Sqrt((xj - xt) * (xj - xt) + (yj - yt) * (yj - yt));
+
+            CalculateSolution(x1,y1,r1,x2,y2,r2);
+
+        }
+    }

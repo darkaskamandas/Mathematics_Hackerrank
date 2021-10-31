@@ -1,0 +1,76 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+class Solution {  
+   
+   public class Point : IComparable{
+      public double x;
+      public double y;
+      public double theta;
+      public double? length = null;
+      
+      public double? Length{
+         get{
+            if(length == null){
+               Length = Math.Sqrt((x*x)+(y*y));
+            }
+            return length;
+         }
+         set{
+            this.length = value;
+         }
+      }
+      
+      public Point(double x, double y){
+         this.x = x;
+         this.y = y;
+         this.theta = Math.Atan2(y, x);
+         if(this.theta < 0){
+            this.theta += 2*Math.PI;
+         }
+         //this.length = Math.Sqrt((x*x)+(y*y));
+      }
+      
+      public int CompareTo(object p) {
+        if (p == null) return 1;
+
+        Point otherPoint = p as Point;
+         if (otherPoint != null) {
+            var thetaComp = this.theta.CompareTo(otherPoint.theta);
+            
+            if(thetaComp == 0){
+               return this.Length.Value.CompareTo(otherPoint.Length.Value);
+            }
+            return thetaComp;
+         }
+        else {
+           throw new ArgumentException("Object is not a Temperature");
+        }
+    }
+      
+      public override string ToString(){
+         return this.x + " " + this.y;
+      }
+
+   }
+   
+   static Point[] points;
+   static int n = 0;
+   
+    static void Main(String[] args) {
+       n = Convert.ToInt32(Console.ReadLine());
+       points = new Point[n];
+       
+       for(int i = 0; i < n; i++){
+          string line = Console.ReadLine();
+          string[] nums = line.Split(' ');
+          points[i] = (new Point(Convert.ToInt32(nums[0]), Convert.ToInt32(nums[1])));
+       }
+       
+       Array.Sort(points);
+       
+       for(int i = 0; i < n; i++){
+          Console.WriteLine(points[i]);
+       }
+    }
+}

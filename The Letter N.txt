@@ -1,0 +1,92 @@
+#include <algorithm>
+#include <bitset>
+#include <cassert>
+#include <climits>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <deque>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <limits>
+#include <list>
+#include <map>
+#include <numeric>
+#include <queue>
+#include <random>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <string>
+#include <tuple>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+
+using namespace std;
+
+static double Pi = 4 * atan(1.0);
+
+static bool CheckE0(int x1, int y1, int x2, int y2)
+{
+	return (x1 * y2 == x2 * y1) && (x1 * x2 >= 0) && (y1 * y2 >= 0);
+}
+
+static bool CheckLE90(int x1, int y1, int x2, int y2)
+{
+	return ((x1 * x2 + y1 * y2) >= 0) && (x1 * y2 - x2 * y1 < 0);
+}
+
+static double GetAngle(int x, int y)
+{
+	return atan2(x, y);
+}
+
+int main()
+{
+	unsigned N;
+	cin >> N;
+	vector<pair<int, int>> vp(N);
+	for (unsigned i = 0; i < N; ++i)
+	{
+		cin >> vp[i].first >> vp[i].second;
+	}
+	vector<vector<unsigned>> vc(N, vector<unsigned>(N, 0));
+	vector<pair<double, unsigned>> va(N);
+	for (unsigned i = 0; i < N; ++i)
+	{
+		int x = vp[i].first, y = vp[i].second;
+		for (unsigned j = 0; j < N; ++j)
+		{
+			if (i == j)
+				va[j] = make_pair(-2 * Pi, j);
+			else
+				va[j] = make_pair(GetAngle(vp[j].second - y, vp[j].first - x), j);
+		}
+		sort(va.begin(), va.end());
+		reverse(va.begin(), va.end());
+		unsigned j1 = 0, j2 = 1, j3 = 0;
+		for (; j1 < N - 1; ++j1)
+		{
+			if (j2 == j1) ++j2;
+			while ((j2 < N - 1) && CheckE0(vp[va[j1].second].first - x, vp[va[j1].second].second - y, vp[va[j2].second].first - x, vp[va[j2].second].second - y)) ++j2;
+			j3 = max(j2, j3);
+			while ((j3 < j1 + N - 1) && CheckLE90(vp[va[j1].second].first - x, vp[va[j1].second].second - y, vp[va[j3 % (N-1)].second].first - x, vp[va[j3 % (N-1)].second].second - y)) ++j3;
+			vc[i][va[j1].second] = j3 - j2;
+		}
+	}
+	uint64_t total = 0;
+	for (unsigned i = 0; i < N; ++i)
+	{
+		for (unsigned j = i + 1; j < N; ++j)
+		{
+			total += vc[i][j] * vc[j][i];
+		}
+	}
+	cout << total << endl;
+	return 0;
+}

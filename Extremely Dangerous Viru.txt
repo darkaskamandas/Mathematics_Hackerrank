@@ -1,0 +1,20 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+class Solution {
+    static void Main(String[] args) {
+        var numbers = Console.ReadLine().Split(' ').Select(long.Parse).ToArray();
+        var a = numbers[0];
+        var b = numbers[1];
+        var t = numbers[2];
+
+        var factor = (a + b) / 2;
+        var modulus = new BigInteger(1000000007L);
+
+        var result = BigInteger.ModPow(factor, t, modulus);
+
+        Console.WriteLine(result);
+    }
+}

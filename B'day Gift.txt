@@ -1,0 +1,20 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+class Solution {
+    static void Main(String[] args) {
+        /* Enter your code here. Read input from STDIN. Print output to STDOUT. Your class should be named Solution */
+        
+        int N=Convert.ToInt32(Console.ReadLine());
+                
+        double prosjek=0;
+        
+        for (int i=0;i<N;i++){
+            prosjek+=Convert.ToDouble(Console.ReadLine());
+        }
+        
+        prosjek/=2;
+        
+        Console.WriteLine(string.Format("{0:0.0}",prosjek));
+    }
+}

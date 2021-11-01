@@ -1,0 +1,510 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Linq;
+using System.Diagnostics;
+
+public class Solution
+{
+    static void Main(string[] args)
+    {
+        StringBuilder builder = new StringBuilder();
+
+        int T = ReadNextInt();
+        for (int t = 0; t < T; t++)
+        {
+            ReadNextString(builder);
+            double result = Line.Go(builder);
+            if (result == 0)
+            {
+                Console.WriteLine("0.0000");
+            }
+            else
+            {
+                Console.WriteLine("{0:0.0000}", (result + 1));
+            }
+        }
+    }
+
+    private static Dictionary<Pattern, double> P2D =
+        new Dictionary<Pattern, double>()
+        {
+            // 8: 2-2-2-2
+            { new Pattern("abbccdad", 0, 276), 130.7436 },
+            { new Pattern("abcdabcd", 0, 184), 132.3590 },
+            { new Pattern("abcdacbd", 2, 138), 120.3333 },
+            { new Pattern("abcdbacd", 0, 0  ), 133.6154 },
+
+            // 8: 4-2-2
+            { new Pattern("ababcaca", 2, 114), 47.4615 },
+            { new Pattern("abcbaaca", 0, 228), 51.7692 },
+            { new Pattern("aabcbcbb", 0, 152), 52.3077 },
+            { new Pattern("abccbcca", 2, 266), 46.3846 },
+
+            // 8: 4-4
+            { new Pattern("abbabbaa", 2, 330), 17.6667 },
+            { new Pattern("abbbaaab", 0, 360), 20.0000 },
+
+            // 8: 6-2
+            { new Pattern("aaaaabab", 2, 242), 13.0000 },
+
+            // 7: 2-2-2-1
+            { new Pattern("aabcbdc", 0, 88 ), 135.2614 },
+            { new Pattern("abcbdad", 0, 0  ), 137.0556 },
+            { new Pattern("abcdcbd", 1, 36 ), 128.6414 },
+            { new Pattern("abacdbd", 2, 102), 116.1793 },
+            { new Pattern("abacddb", 0, 204), 128.3674 },
+            { new Pattern("aabbcdd", 0, 70 ), 135.9419 },
+
+            // 7: 4-2-1
+            { new Pattern("abccbcc", 0, 54 ), 58.5648 },
+            { new Pattern("abcaaba", 1, 56 ), 54.9352 },
+            { new Pattern("aabacba", 0, 68 ), 58.3380 },
+            { new Pattern("aabccaa", 1, 28 ), 55.3889 },
+            { new Pattern("abacbaa", 2, 182), 46.1852 },
+
+            // 7: 6-1
+            { new Pattern("aaaaaba", 1, 36), 20.0000 },
+
+            // 7: 4-3
+            { new Pattern("aabbbba", 1, 116), 19.6111 },
+            { new Pattern("aabaabb", 0, 138), 20.9722 },
+            { new Pattern("aaabbba", 2, 178), 16.6944 },
+
+            // 7: 2-2-3
+            { new Pattern("abcabac", 0, 180), 47.7319 },
+            { new Pattern("abccaba", 1, 124), 46.6271 },
+            { new Pattern("abcbacc", 0, 62 ), 50.2567 },
+            { new Pattern("abaccbb", 0, 78 ), 50.0299 },
+            { new Pattern("abcccab", 2, 90 ), 42.9268 },
+            { new Pattern("abccbca", 2, 122), 42.4731 },
+
+            // 7: 2-5
+            { new Pattern("aaaaabb", 2, 146), 11.2500 },
+            { new Pattern("ababaaa", 1, 132), 13.0000 },
+
+            // 6: 2-2-2
+            { new Pattern("abaccb", 0, 132), 19.0000 },
+            { new Pattern("aabbcc", 2, 66 ), 16.5000 },
+
+            // 6: 4-2
+            { new Pattern("abbabb", 2, 98), 6.5 },
+
+            // 5: 2-2-1
+            { new Pattern("abbca", 1, 16), 18.3750 },
+            { new Pattern("abcab", 2, 42), 14.6250 },
+            { new Pattern("abcac", 0, 38), 19.9375 },
+
+            // 5: 2-3
+            { new Pattern("aabab", 1, 44), 6.50 },
+            { new Pattern("abaab", 2, 42), 5.25 },
+
+            // 5: 4-1
+            { new Pattern("abaaa", 1, 16), 9 },
+
+            // 4: 2-2
+            { new Pattern("aabb", 2, 18), 2 },
+
+            // 3: 2-1
+            { new Pattern("aab", 1, 4), 2 },
+        };
+
+    private struct Pattern : IEquatable<Pattern>
+    {
+        private int raw;
+
+        private static List<int> TMP = new List<int>(8);
+
+        public Pattern(string str, int first, int second)
+            : this(new StringBuilder(str), first, second)
+        {
+        }
+
+        public Pattern(StringBuilder builder, int first, int second)
+        {
+            this.raw = 0;
+            TMP.Clear();
+
+            this.raw |= (first + second * 4) << 16;
+
+            while (true)
+            {
+                char c = '0';
+                int cnt = 0;
+
+                for (int i = 0; i < builder.Length; i++)
+                {
+                    char cc = builder[i];
+                    if (cc != '0')
+                    {
+                        if (c == '0')
+                        {
+                            c = cc;
+                        }
+
+                        if (c == cc)
+                        {
+                            cnt++;
+                            builder[i] = '0';
+                        }
+                    }
+                }
+
+                if (cnt == 0)
+                {
+                    break;
+                }
+                TMP.Add(cnt);
+            }
+
+            TMP.Sort();
+
+            for (int i = 0; i < TMP.Count; i++)
+            {
+                this.raw |= TMP[i] << (i * 4);
+            }
+        }
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            int r = this.raw & 0xffff;
+            while (r > 0)
+            {
+                if (builder.Length > 0) builder.Append('-');
+                builder.Append(r & 0xf);
+                r >>= 4;
+            }
+
+            return builder.ToString();
+        }
+
+        public override bool Equals(object obj)
+        {
+            throw new Exception();
+        }
+
+        public override int GetHashCode()
+        {
+            return this.raw.GetHashCode();
+        }
+
+        public bool Equals(Pattern other)
+        {
+            return this.raw == other.raw;
+        }
+    }
+
+    private struct Transition
+    {
+        public Dictionary<Line, double> members;
+        public int PalindromesCount;
+
+        public void Add(Line l, double count = 1)
+        {
+            double cnt;
+            if (members.TryGetValue(l, out cnt))
+            {
+                members[l] = cnt + count;
+            }
+            else
+            {
+                members[l] = count;
+            }
+        }
+
+        public void AddFrom(Transition other, double factor)
+        {
+            foreach (var kvp in other.members)
+            {
+                this.Add(kvp.Key, kvp.Value * factor);
+                this.PalindromesCount += other.PalindromesCount;
+            }
+        }
+
+        public Transition Clone()
+        {
+            Transition result = Transition.Create();
+            result.AddFrom(this, 1);
+            result.PalindromesCount = this.PalindromesCount;
+            return result;
+        }
+
+        public static Transition Create()
+        {
+            Dictionary<Line, double> m = cache.Count == 0 ? new Dictionary<Line, double>() : cache.Pop();
+            return new Transition() { members = m, PalindromesCount = 0 };
+        }
+
+        public void Free()
+        {
+            members.Clear();
+            cache.Push(this.members);
+        }
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            foreach (var kvp in this.members)
+            {
+                builder.AppendFormat("{0} * '{1}'", kvp.Value, kvp.Key);
+                builder.AppendLine();
+            }
+            return builder.ToString();
+        }
+
+        private static Stack<Dictionary<Line, double>> cache = new Stack<Dictionary<Line, double>>();
+    }
+
+    private struct Line : IEquatable<Line>
+    {
+        private ulong raw;
+
+        private static Dictionary<Line, double> known = new Dictionary<Line, double>();
+
+        public char this[int i]
+        {
+            get
+            {
+                Debug.Assert(i >= 0 && i < 8);
+                return (char)((raw >> (i * 8)) & 0xff);
+            }
+            set
+            {
+                Debug.Assert(i >= 0 && i < 8);
+                this.raw &= ~(0xFFul << (i * 8));
+                this.raw |= (ulong)(value & 0xff) << (i * 8);
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return this.raw.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            throw new Exception();
+        }
+
+        public bool Equals(Line other)
+        {
+            return this.raw == other.raw;
+        }
+
+        private static int CharCount;
+        private static Dictionary<Line, Transition> calculated = new Dictionary<Line, Transition>();
+        private static char[] c2c = new char[26];
+
+        public static double Go(StringBuilder builder)
+        {
+            CharCount = builder.Length;
+            Debug.Assert(CharCount <= 8);
+
+            if (CharCount < 3) return 0;
+
+            Line line = CreateLine(builder, true);
+
+            if (line.IsPalindrome)
+            {
+                return 0;
+            }
+
+            double result;
+            if (known.TryGetValue(line, out result))
+            {
+                return result;
+            }
+
+            //ClearCache();
+
+            double factor = ((double)CharCount) * (CharCount - 1) / 2;
+
+            Transition first = line.GetTransitions().Clone();
+            int firstPalindromeCount = first.PalindromesCount;
+
+            //  calculate next equation
+            Transition second = Transition.Create();
+            foreach (var kvp in first.members)
+            {
+                double dbl = kvp.Value / factor;
+                second.AddFrom(kvp.Key.GetTransitions(), dbl);
+            }
+
+            int secondPalindromeCount = second.PalindromesCount;
+
+            var pattern = new Pattern(
+                new StringBuilder(builder.ToString()),
+                firstPalindromeCount,
+                secondPalindromeCount);
+
+            if (P2D.TryGetValue(pattern, out result))
+            {
+                known[line] = result;
+
+                first.Free();
+                second.Free();
+
+                return result;
+            }
+
+            throw new Exception();
+        }
+
+        private static Line CreateLine(string str)
+        {
+            return CreateLine(new StringBuilder(str), true);
+        }
+
+        private static Line CreateLine(StringBuilder builder, bool renumber)
+        {
+            for (int i = 0; i < 26; i++) c2c[i] = ' ';
+
+            Line line = new Line();
+            char nextChar = 'a';
+            for (int i = 0; i < CharCount; i++)
+            {
+                char c = builder[i];
+                char cc;
+                if (renumber)
+                {
+                    cc = c2c[c - 'a'];
+                    if (cc == ' ')
+                    {
+                        cc = nextChar;
+                        nextChar++;
+                        c2c[c - 'a'] = cc;
+                    }
+                }
+                else
+                {
+                    cc = c;
+                }
+                line[i] = cc;
+            }
+            return line;
+        }
+
+        private static void ClearCache()
+        {
+            foreach (var value in calculated.Values)
+            {
+                value.Free();
+            }
+            calculated.Clear();
+        }
+
+        public bool IsPalindrome
+        {
+            get
+            {
+                int a = 0;
+                int b = CharCount - 1;
+                while (a < b)
+                {
+                    if (this[a] != this[b])
+                    {
+                        return false;
+                    }
+                    a++;
+                    b--;
+                }
+                return true;
+            }
+        }
+
+        public Transition GetTransitions()
+        {
+            Debug.Assert(!this.IsPalindrome);
+
+            Transition result;
+            if (calculated.TryGetValue(this, out result))
+            {
+                return result;
+            }
+
+            result = Transition.Create();
+
+            for (int i = 0; i < CharCount; i++)
+            {
+                char iChar = this[i];
+                for (int j = i + 1; j < CharCount; j++)
+                {
+                    char jChar = this[j];
+                    if (iChar == jChar)
+                    {
+                        result.Add(this);
+                    }
+                    else
+                    {
+                        Line other = this;
+                        other[i] = jChar;
+                        other[j] = iChar;
+                        if (!other.IsPalindrome)
+                        {
+                            result.Add(other);
+                        }
+                        else
+                        {
+                            result.PalindromesCount++;
+                        }
+                    }
+                }
+            }
+
+            calculated.Add(this, result);
+            return result;
+        }
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < CharCount; i++)
+            {
+                builder.Append((char)this[i]);
+            }
+            return builder.ToString();
+        }
+    }
+
+    private static void ReadNextString(StringBuilder builder)
+    {
+        char c = (char)Console.Read();
+        while (!char.IsLetter(c))
+        {
+            c = (char)Console.Read();
+        }
+
+        builder.Clear();
+        do
+        {
+            builder.Append(c);
+        }
+        while (char.IsLetter(c = (char)Console.Read()));
+    }
+
+    private static int ReadNextInt()
+    {
+        char c = (char)Console.Read();
+        while (!char.IsDigit(c) && c != '-')
+        {
+            c = (char)Console.Read();
+        }
+
+        bool minus = (c == '-');
+        if (minus)
+        {
+            c = (char)Console.Read();
+        }
+
+        int value = 0;
+        do
+        {
+            value *= 10;
+            value += c - '0';
+        }
+        while (char.IsDigit(c = (char)Console.Read()));
+
+        return minus ? -value : value;
+    }
+}

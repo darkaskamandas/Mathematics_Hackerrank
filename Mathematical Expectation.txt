@@ -1,0 +1,45 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+class Solution {
+    struct Fraction
+    {
+        public long up, down;
+        public Fraction(long _up, long _down)
+        {
+            up = _up;
+            down = _down;
+            long k = GCD(up, down);
+            up = up / k;
+            down = down / k;
+        }
+        private static long GCD(long a, long b)
+        {
+            return b == 0 ? a : GCD(b, a % b);
+        }
+        public static Fraction operator +(Fraction F1, Fraction F2)
+        {
+            Fraction F = new Fraction(F1.up * F2.down + F2.up * F1.down, F1.down * F2.down);
+            long k = GCD(F.up, F.down);
+            F.up = F.up / k;
+            F.down = F.down / k;
+            return F;
+        }
+    }
+    static void Main(String[] args)
+    {
+        string[] s=Console.ReadLine().Split();
+        int K = int.Parse(s[0]);
+        long N = long.Parse(s[1]);
+        if (K==1)
+        {
+            Fraction Result = new Fraction((N - 2) * 2, 3);
+            Console.WriteLine(Result.up + " / " + Result.down);
+        }
+        else if (K == 2)
+        {
+            Fraction Result = new Fraction(59 + (N - 3) * 56 + (N - 3) * (N - 2) * 40, 90);
+            Console.WriteLine(Result.up + " / " + Result.down);
+        }
+    }
+}

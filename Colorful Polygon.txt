@@ -1,0 +1,189 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Text;
+
+// (?°?°)????????????????????????????
+public class Solver
+{
+    public object Solve()
+    {
+        int n = ReadInt();
+        var a = ReadIntArray().Select(x => x - 1).ToArray();
+
+        int ans = 0;
+        for (int i = 0; i < 1 << n; i++)
+        {
+            int z = 0;
+            int first = -1;
+            for (int j = 0; j < n; j++)
+                if ((i >> j & 1) == 0)
+                {
+                    if (first == -1)
+                        first = j;
+                    z++;
+                }
+            if (z < 2)
+                continue;
+
+            var f = new bool[n];
+            bool good = true;
+            for (int j = first + 1; j < n; j++)
+            {
+                if ((i >> j & 1) == 1)
+                {
+                    if (f[a[j]])
+                    {
+                        good = false;
+                        break;
+                    }
+                    f[a[j]] = true;
+                }
+                else
+                    f = new bool[n];
+            }
+            if (good)
+            {
+                for (int j = 0; j < first; j++)
+                {
+                    if ((i >> j & 1) == 1)
+                    {
+                        if (f[a[j]])
+                        {
+                            good = false;
+                            break;
+                        }
+                        f[a[j]] = true;
+                    }
+                    else
+                        f = new bool[n];
+                }                
+            }
+            if (good)
+                ans++;
+        }
+        
+        return ans;
+    }
+
+    #region Main
+
+    protected static TextReader reader;
+    protected static TextWriter writer;
+
+    static void Main()
+    {
+#if DEBUG
+        reader = new StreamReader("..\\..\\input.txt");
+        writer = Console.Out;
+        //writer = new StreamWriter("..\\..\\output.txt");
+#else
+        reader = Console.In;
+        writer = new StreamWriter(Console.OpenStandardOutput());
+#endif
+        try
+        {
+            var ts = DateTime.Now;
+            object result = new Solver().Solve();
+            if (result != null)
+                writer.WriteLine(result);
+        }
+        catch (Exception ex)
+        {
+#if DEBUG
+            Console.WriteLine(ex);
+#else
+            throw;
+#endif
+        }
+        reader.Close();
+        writer.Close();
+    }
+
+    #endregion
+
+    #region Read/Write
+
+    private static Queue<string> currentLineTokens = new Queue<string>();
+
+    private static string[] ReadAndSplitLine()
+    {
+        return reader.ReadLine().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+    }
+
+    public static string ReadToken()
+    {
+        while (currentLineTokens.Count == 0)
+            currentLineTokens = new Queue<string>(ReadAndSplitLine());
+        return currentLineTokens.Dequeue();
+    }
+
+    public static int ReadInt()
+    {
+        return int.Parse(ReadToken());
+    }
+
+    public static long ReadLong()
+    {
+        return long.Parse(ReadToken());
+    }
+
+    public static double ReadDouble()
+    {
+        return double.Parse(ReadToken(), CultureInfo.InvariantCulture);
+    }
+
+    public static int[] ReadIntArray()
+    {
+        return ReadAndSplitLine().Select(int.Parse).ToArray();
+    }
+
+    public static long[] ReadLongArray()
+    {
+        return ReadAndSplitLine().Select(long.Parse).ToArray();
+    }
+
+    public static double[] ReadDoubleArray()
+    {
+        return ReadAndSplitLine().Select(s => double.Parse(s, CultureInfo.InvariantCulture)).ToArray();
+    }
+
+    public static int[][] ReadIntMatrix(int numberOfRows)
+    {
+        int[][] matrix = new int[numberOfRows][];
+        for (int i = 0; i < numberOfRows; i++)
+            matrix[i] = ReadIntArray();
+        return matrix;
+    }
+
+    public static int[][] ReadAndTransposeIntMatrix(int numberOfRows)
+    {
+        int[][] matrix = ReadIntMatrix(numberOfRows);
+        int[][] ret = new int[matrix[0].Length][];
+        for (int i = 0; i < ret.Length; i++)
+        {
+            ret[i] = new int[numberOfRows];
+            for (int j = 0; j < numberOfRows; j++)
+                ret[i][j] = matrix[j][i];
+        }
+        return ret;
+    }
+
+    public static string[] ReadLines(int quantity)
+    {
+        string[] lines = new string[quantity];
+        for (int i = 0; i < quantity; i++)
+            lines[i] = reader.ReadLine().Trim();
+        return lines;
+    }
+
+    public static void WriteArray<T>(IEnumerable<T> array)
+    {
+        writer.WriteLine(string.Join(" ", array));
+    }
+
+    #endregion
+}

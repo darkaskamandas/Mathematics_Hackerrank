@@ -1,0 +1,545 @@
+/* Enter your code here. Read input from STDIN. Print output to STDOUT */
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+
+class Solution
+{
+    private const string FileName = @"Test";
+    private const string InputFileName = @"..\..\" + FileName + ".in";
+    private const string OutputFileName = @"..\..\" + FileName + ".out";
+    private const bool MultipleCases = false;
+
+    public int N { get; private set; }
+
+    private Solution(InputParser input)
+    {
+        N = input.GetInt();
+    }
+
+    private object SolveCase()
+    {
+        return SimulateRoadSelection(N);
+    }
+
+    private static int SimulateRoadSelection(int N)
+    {
+        // A table that maps each configuration we have reached to the probability of the fact.
+        var activeConfigurations = new ConfigurationTable();
+        activeConfigurations.Add(new CountryConfiguration(N), 1);
+        double averageDayCount = 0;
+        for (int remainingEdges = N * (N - 1) / 2, takenEdges = 0; activeConfigurations.Any(); --remainingEdges, ++takenEdges)
+        {
+            // Let's go through all the configurations we have reached and get the configurations that result
+            // from building a single new road across an edge.
+            var newConfigurations = new ConfigurationTable();
+            foreach (var item in activeConfigurations)
+            {
+                var configuration = item.Key;
+                var probability = item.Value;
+                // Consider merging all pairs of groups.
+                var unusedEdges = remainingEdges;
+                // A handler of new configurations - extracted to a delegate, as it is used multiple times.
+                Action<CountryConfiguration, int> newConfigurationHandler = (newConfiguration, candidateEdges) =>
+                {
+                    unusedEdges -= candidateEdges;
+                    // The probability of ending up with this configuration depends on the number of edges that take to it
+                    // when compared to the total.
+                    var newProbability = probability * candidateEdges / remainingEdges;
+                    // Check whether the configuration is final.
+                    if (newConfiguration.IsFinal)
+                    {
+                        averageDayCount += (takenEdges + 1) * newProbability;
+                    }
+                    else
+                    {
+                        newConfigurations.Accumulate(newConfiguration, newProbability);
+                    }
+                };
+                for (int i = 0; i < configuration.EntryCount; ++i)
+                {
+                    var ci = configuration[i];
+                    // First, edges between groups of the same size...
+                    if (ci.OccurrenceCount > 1)
+                    {
+                        var newConfiguration = configuration.MergeGroups(i, i);
+                        // How many edges exist joining all these groups.
+                        var candidateEdges = ci.GroupSize * ci.GroupSize * ci.OccurrenceCount * (ci.OccurrenceCount - 1) / 2;
+                        newConfigurationHandler(newConfiguration, candidateEdges);
+                    }
+                    // ... then edges between groups of different sizes...
+                    for (int j = i + 1; j < configuration.EntryCount; ++j)
+                    {
+                        var cj = configuration[j];
+                        var newConfiguration = configuration.MergeGroups(i, j);
+                        var candidateEdges = ci.GroupSize * cj.GroupSize * ci.OccurrenceCount * cj.OccurrenceCount;
+                        newConfigurationHandler(newConfiguration, candidateEdges);
+                    }
+                }
+                // ... and finally, consider edges within existing groups. These don't change the active configuration.
+                if (unusedEdges != 0)
+                {
+                    newConfigurationHandler(configuration, unusedEdges);
+                }
+            }
+            activeConfigurations = newConfigurations;
+        }
+
+        return (int)averageDayCount;
+    }
+
+    /// <summary>
+    /// A table mapping configurations to their probabilities.
+    /// </summary>
+    private class ConfigurationTable : Dictionary<CountryConfiguration, double>
+    {
+        public void Accumulate(CountryConfiguration configuration, double probability)
+        {
+            double oldProbability;
+            TryGetValue(configuration, out oldProbability);
+            this[configuration] = oldProbability + probability;
+        }
+    }
+
+    /// <summary>
+    /// A class that describes the connectedness of a number of countries by listing groups of connected countries
+    /// of different sizes. Each entry describes the number of connected group of countries of each size.
+    /// The initial state (N unconnected countries) is described by a single entry for N groups of size one;
+    /// the final state (N connected countries) is described by a single entry for 1 group of size N.
+    /// </summary>
+    private class CountryConfiguration : IEquatable<CountryConfiguration>
+    {
+        /// <summary>
+        /// Count of countries for which this is a configuration (total of countries across all groups).
+        /// </summary>
+        public int CountryCount { get; private set; }
+
+        /// <summary>
+        /// Number of entries in the configuration.
+        /// </summary>
+        public int EntryCount
+        {
+            get
+            {
+                return Entries.Length;
+            }
+        }
+
+        /// <summary>
+        /// Whether this is a final configurations.
+        /// </summary>
+        public bool IsFinal
+        {
+            get
+            {
+                return EntryCount == 1 && Entries[0].OccurrenceCount == 1;
+            }
+        }
+
+        /// <summary>
+        /// Entries describing the configuration.
+        /// </summary>
+        private Entry[] Entries { get; set; }
+
+        /// <summary>
+        /// Cached hash code.
+        /// </summary>
+        private int CachedHashCode { get; set; }
+
+        /// Creates a configuration for a given number of unconnected countries.
+        /// </summary>
+        /// <param name="N">The count of countries.</param>
+        public CountryConfiguration(int N)
+            : this(N, new Entry[] { new Entry(1, N) })
+        {
+        }
+
+        /// <summary>
+        /// An internal constructor that takes the array of entries.
+        /// </summary>
+        /// <param name="N">The count of countries.</param>
+        /// <param name="entries">The array of entries.</param>
+        private CountryConfiguration(int N, Entry[] entries)
+        {
+            CountryCount = N;
+            Entries = entries;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is CountryConfiguration && Equals((CountryConfiguration)obj);
+        }
+
+        public bool Equals(CountryConfiguration other)
+        {
+            if (Entries.Length != other.Entries.Length)
+            {
+                return false;
+            }
+            for (int e = Entries.Length - 1; e >= 0; --e)
+            {
+                if (!Entries[e].Equals(other.Entries[e]))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Returns an efficient hash code for configurations. A wrong choice for the hash function (for example, XOR'ing all values)
+        /// can multiply the running time by 10x
+        /// </summary>
+        /// <returns>A hash code for a country configuration.</returns>
+        public override int GetHashCode()
+        {
+            if (CachedHashCode == 0)
+            {
+                // A hash code that combines hash codes for all entries across the whole int.
+                CachedHashCode = Entries.Aggregate(0, (e1, e2) => unchecked(e1.GetHashCode() * 37 + e2.GetHashCode()));
+            }
+            return CachedHashCode;
+        }
+
+        public override string ToString()
+        {
+            return string.Join("-", Entries.Select(e => string.Join("-", Enumerable.Repeat(e.GroupSize, e.OccurrenceCount))));
+        }
+
+        /// <summary>
+        /// Returns a single entry. Entries are in order of decreasing group size.
+        /// </summary>
+        /// <param name="i">The index of the entry, between 0 and EntryCount - 1.</param>
+        /// <returns>The selected entry.</returns>
+        public Entry this[int i]
+        {
+            get
+            {
+                return Entries[i];
+            }
+        }
+
+        /// <summary>
+        /// Returns the configuration that results from merging one group from each of the given entries.
+        /// The resulting configuration describes the set of countries after connecting both groups.
+        /// </summary>
+        /// <param name="i">The entry from which the first group is taken.</param>
+        /// <param name="j">The entry from which the second group is taken.</param>
+        /// <returns>The resulting configuration.</returns>
+        public CountryConfiguration MergeGroups(int i, int j)
+        {
+            int newEntryCount = EntryCount;
+            if (i == j)
+            {
+                if (Entries[i].OccurrenceCount == 2)
+                {
+                    --newEntryCount;
+                }
+            }
+            else
+            {
+                if (Entries[i].OccurrenceCount == 1)
+                {
+                    --newEntryCount;
+                }
+                if (Entries[j].OccurrenceCount == 1)
+                {
+                    --newEntryCount;
+                }
+            }
+            // Find the insertion point of the new entry (if it doesn't exist already).
+            int newGroupSize = Entries[i].GroupSize + Entries[j].GroupSize;
+            int newEntryPos = Math.Min(i, j) - 1;
+            for (; newEntryPos >= 0 && Entries[newEntryPos].GroupSize < newGroupSize; --newEntryPos)
+            {
+            }
+            bool newEntryExists = newEntryPos >= 0 && Entries[newEntryPos].GroupSize == newGroupSize;
+            if (!newEntryExists)
+            {
+                ++newEntryCount;
+                ++newEntryPos;
+            }
+            // Create the new entries.
+            var newEntries = new Entry[newEntryCount];
+            int oe = 0, ne = 0;
+            while (ne < newEntries.Length)
+            {
+                if (ne == newEntryPos)
+                {
+                    newEntries[ne].GroupSize = newGroupSize;
+                    if (newEntryExists)
+                    {
+                        newEntries[ne].OccurrenceCount = Entries[oe].OccurrenceCount;
+                        ++oe;
+                    }
+                    ++newEntries[ne].OccurrenceCount;
+                    ++ne;
+                }
+                else if (i == j && oe == i)
+                {
+                    if (Entries[oe].OccurrenceCount > 2)
+                    {
+                        newEntries[ne].GroupSize = Entries[oe].GroupSize;
+                        newEntries[ne].OccurrenceCount = Entries[oe].OccurrenceCount - 2;
+                        ++ne;
+                    }
+                    ++oe;
+                }
+                else if (oe == i || oe == j)
+                {
+                    if (Entries[oe].OccurrenceCount > 1)
+                    {
+                        newEntries[ne].GroupSize = Entries[oe].GroupSize;
+                        newEntries[ne].OccurrenceCount = Entries[oe].OccurrenceCount - 1;
+                        ++ne;
+                    }
+                    ++oe;
+                }
+                else
+                {
+                    newEntries[ne] = Entries[oe];
+                    ++ne;
+                    ++oe;
+                }
+            }
+            return new CountryConfiguration(CountryCount, newEntries);
+        }
+
+        /// <summary>
+        /// An entry in the configuration, consisting of a country group size and the number of occurrences.
+        /// </summary>
+        public struct Entry : IEquatable<Entry>
+        {
+            /// <summary>
+            /// Size of the group of countries.
+            /// </summary>
+            public int GroupSize { get; set; }
+
+            /// <summary>
+            /// Number of occurrences of a group of this size.
+            /// </summary>
+            public int OccurrenceCount { get; set; }
+
+            /// <summary>
+            /// Default constructor.
+            /// </summary>
+            /// <param name="groupSize">Size of the group of countries.</param>
+            /// <param name="occurrenceCount">Count of occurrences.</param>
+            public Entry(int groupSize, int occurrenceCount)
+                : this()
+            {
+                GroupSize = groupSize;
+                OccurrenceCount = occurrenceCount;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is Entry && Equals((Entry)obj);
+            }
+
+            public bool Equals(Entry other)
+            {
+                return GroupSize == other.GroupSize && OccurrenceCount == other.OccurrenceCount;
+            }
+
+            public override int GetHashCode()
+            {
+                // A hash code that minimizes collisions. gs ^ oc, for example, is a horrible idea.
+                return (GroupSize << 16) + OccurrenceCount;
+            }
+        }
+    }
+
+    static void Main(string[] args)
+    {
+        bool useFile = File.Exists(InputFileName);
+        var inputParser = useFile ? new InputParser(InputFileName) : new InputParser();
+
+        TextWriter output;
+        if (useFile)
+        {
+            File.Delete(OutputFileName);
+            output = new StreamWriter(File.OpenWrite(OutputFileName));
+        }
+        else
+        {
+            output = Console.Out;
+        }
+
+        var sw = new Stopwatch();
+        sw.Start();
+        try
+        {
+            if (MultipleCases)
+            {
+                int caseCount = inputParser.GetInt();
+                for (int c = 0; c < caseCount; ++c)
+                {
+                    output.WriteLine(string.Format("{0}", new Solution(inputParser).SolveCase()));
+                }
+            }
+            else
+            {
+                output.WriteLine(string.Format("{0}", new Solution(inputParser).SolveCase()));
+            }
+        }
+        finally
+        {
+            if (useFile)
+            {
+                output.Dispose();
+            }
+        }
+        if (useFile)
+        {
+            Console.WriteLine("Output:");
+            Console.Write(File.ReadAllText(OutputFileName));
+            Console.WriteLine("Total time: {0} ms", sw.ElapsedMilliseconds);
+            Console.ReadLine();
+        }
+    }
+}
+
+public class InputParser
+{
+    private IEnumerator<string> Elements { get; set; }
+
+    private IEnumerable<string> GetElements(IEnumerable<string> lines)
+    {
+        // Insert a null element at the end of each line.
+        return lines.SelectMany(l => Regex.Split(l, @"\s+").Concat(new string[] { null }));
+    }
+
+    private static IEnumerable<string> ReadConsoleLines()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            yield return line;
+        }
+    }
+
+    public InputParser()
+        : this(ReadConsoleLines())
+    {
+    }
+
+    public InputParser(string filename)
+        : this(File.ReadLines(filename))
+    {
+    }
+
+    public InputParser(IEnumerable<string> lines)
+    {
+        Elements = GetElements(lines).GetEnumerator();
+    }
+
+    public string GetString()
+    {
+        if (Elements.MoveNext())
+        {
+            return string.IsNullOrEmpty(Elements.Current) ? GetString() : Elements.Current;
+        }
+        else
+        {
+            throw new Exception("Tried to go past the end of the file");
+        }
+    }
+
+    public IEnumerable<string> GetStrings(int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            yield return GetString();
+        }
+    }
+
+    public string[] GetStringArray(int length)
+    {
+        return GetStrings(length).ToArray();
+    }
+
+    public IEnumerable<string> GetNextLine()
+    {
+        yield return GetString();
+        while (Elements.MoveNext() && Elements.Current != null)
+        {
+            yield return Elements.Current;
+        }
+    }
+
+    public int GetInt()
+    {
+        return int.Parse(GetString());
+    }
+
+    public int[] GetIntArray()
+    {
+        return GetNextLine().Select(i => int.Parse(i)).ToArray();
+    }
+
+    public int[] GetIntArray(int length)
+    {
+
+        return GetStrings(length).Select(i => int.Parse(i)).ToArray();
+    }
+
+    public long GetLong()
+    {
+        return long.Parse(GetString());
+    }
+
+    public long[] GetLongArray()
+    {
+        return GetNextLine().Select(i => long.Parse(i)).ToArray();
+    }
+
+    public long[] GetLongArray(int length)
+    {
+        return GetStrings(length).Select(i => long.Parse(i)).ToArray();
+    }
+
+    public float GetFloat()
+    {
+        return float.Parse(GetString());
+    }
+
+    public float[] GetFloatArray()
+    {
+        return GetNextLine().Select(i => float.Parse(i)).ToArray();
+    }
+
+    public float[] GetFloatArray(int length)
+    {
+        return GetStrings(length).Select(i => float.Parse(i)).ToArray();
+    }
+
+    public double GetDouble()
+    {
+        return double.Parse(GetString());
+    }
+
+    public double[] GetDoubleArray()
+    {
+        return GetNextLine().Select(i => double.Parse(i)).ToArray();
+    }
+
+    public double[] GetDoubleArray(int length)
+    {
+        return GetStrings(length).Select(i => double.Parse(i)).ToArray();
+    }
+
+    public char GetChar()
+    {
+        return GetString().ToCharArray().Single();
+    }
+
+    public char[] GetChars()
+    {
+        return GetString().ToCharArray();
+    }
+}

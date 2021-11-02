@@ -1,0 +1,155 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+class Program
+{
+    static void solve(StreamReader reader, StreamWriter writer)
+    {
+        const int DICE = 6;
+        var p = new decimal[DICE];
+        var lp = new decimal[DICE];
+        var kp = new decimal[DICE];
+        var ke = new decimal[DICE];
+        var kv = new decimal[DICE];
+        for (int i = 0; i < DICE; ++i)
+        {
+            p[i] = reader.ReadDecimal();
+            lp[i] = p[i] / (1 - p[i]);
+            ke[i] = i + 1;
+            kv[i] = ke[i] * ke[i];
+        }
+        var n = reader.ReadInt();
+        
+        lp.CopyTo(kp, 0);
+
+        for (int h = 2; h<=n; ++h)
+        {
+            var np = new decimal[DICE];
+            var ne = new decimal[DICE];
+            var nv = new decimal[DICE];
+            for (int i = 0; i < DICE; ++i)
+            {
+                var i1 = i + 1;
+                decimal sum = 0;
+                decimal sum2 = 0;
+                decimal sum3 = 0;
+                for (int j = 0; j < DICE; ++j)
+                    if (i != j)
+                    {
+                        sum += kp[j];
+                        sum2 += (decimal)kp[j] * (i1 + ke[j]);
+                        sum3 += (decimal)kp[j] * (i1 * i1 + 2 * i1 * ke[j] + kv[j]);
+                    }
+                np[i] = lp[i] * sum;
+                ne[i] = sum2 / (decimal)sum;
+                nv[i] = sum3 / (decimal)sum;
+            }
+
+            kp = np;
+            ke = ne;
+            kv = nv;
+        }
+        decimal ep = 0;
+        decimal ev = 0;
+        for (int i = 0; i < DICE; ++i)
+        {
+            ep += ke[i] * (decimal)(kp[i] * (1 - p[i]));
+            ev += kv[i] * (decimal)(kp[i] * (1 - p[i]));
+        }
+        ev -= ep * ep;
+        writer.WriteLine(ep);
+        writer.WriteLine(ev);
+        //writer.WriteLine(string.Join(",", kp));
+        //writer.WriteLine(string.Join(",", ke));
+        //writer.WriteLine(string.Join(",", kv));
+    }
+
+    #region launch
+    static void Main(string[] args)
+    {
+        using (var writer = new FormattedStreamWriter(
+#if CODECHIEF_LOCAL
+"output.txt"
+#else 
+         Console.OpenStandardOutput()
+#endif
+))
+        {
+            using (var reader = new StreamReader(
+#if CODECHIEF_LOCAL
+"input.txt"
+#else 
+         Console.OpenStandardInput() 
+#endif
+))
+            {
+#if CODECHIEF_LOCAL
+                var stopw = new Stopwatch();
+                stopw.Start();
+#endif
+                solve(reader, writer);
+#if CODECHIEF_LOCAL
+                stopw.Stop();
+                writer.WriteLine("> {0}ms", stopw.ElapsedMilliseconds);
+#endif
+            }
+        }
+    }
+    #endregion
+}
+#region helpers
+class FormattedStreamWriter : StreamWriter
+{
+    public FormattedStreamWriter(Stream stream) : base(stream) { }
+    public FormattedStreamWriter(string filePath) : base(filePath) { }
+    public override IFormatProvider FormatProvider
+    {
+        get
+        {
+            return CultureInfo.InvariantCulture;
+        }
+    }
+}
+static class IOExtensions
+{
+    public static string ReadString(this StreamReader reader)
+    {
+        return reader.ReadToken();
+    }
+    public static int ReadInt(this StreamReader reader)
+    {
+        return int.Parse(reader.ReadToken(), CultureInfo.InvariantCulture);
+    }
+    public static long ReadLong(this StreamReader reader)
+    {
+        return long.Parse(reader.ReadToken(), CultureInfo.InvariantCulture);
+    }
+    public static double ReadDouble(this StreamReader reader)
+    {
+        return double.Parse(reader.ReadToken(), CultureInfo.InvariantCulture);
+    }
+    public static decimal ReadDecimal(this StreamReader reader)
+    {
+        return decimal.Parse(reader.ReadToken(), CultureInfo.InvariantCulture);
+    }
+    
+    static Queue<string> buffer = new Queue<string>(100);
+    static string ReadToken(this StreamReader reader)
+    {
+        while (buffer.Count == 0)
+        {
+            reader.ReadLine().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).ToList().ForEach((t) =>
+            {
+                buffer.Enqueue(t);
+            });
+        } return buffer.Dequeue();
+    }
+}
+#endregion

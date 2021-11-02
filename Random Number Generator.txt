@@ -1,0 +1,84 @@
+using System.Diagnostics;
+using System.Collections.Generic;
+using System.Linq;
+using System;
+using System.IO;
+
+class Solution
+{
+	private double[] _harmonic;      // H_n
+	private int _lastM, _lastN;
+	public Solution(int Nmax)
+	{
+		_harmonic = new double[Nmax + 1];
+		double sum = 0;
+		for (int i = 1; i < _harmonic.Length; ++i)
+		{
+			sum += 1.0 / (double)i;
+			_harmonic[i] = sum;
+		}
+		_harmonic[0] = 0;
+		_lastM = 0;
+		_lastN = 1;
+	}
+	// calculate M such that M = (N - M - 2) / (H_N - H_M)
+	// in fact, we want the minimal M such that this is > 0
+	public int calcM(int N)
+	{
+		int l = 0;
+		int r = N;
+		Func<int, double> f = ((int m) => m * (_harmonic[N] - _harmonic[m]) - (N - m - 2));
+		if (f(l) > 0)
+			return 0;
+		// Optimization
+		if (N >= _lastN)
+		{
+			l = _lastM;
+			r = l + Math.Max(1, N - _lastN);
+			if (f(r) < 0)
+				r = N;
+		}
+		while (r - l > 1)
+		{
+			int m = (r + l) >> 1;
+			double fm = f(m);
+			if (fm <= 0)
+				l = m;
+			else
+				r = m;
+		}
+		return l;
+	}
+
+	public double calc(int M, int N)
+	{
+		double nm2 = (double)(N - M - 2);
+		return ((double)(N - M) * (double)(N + M + 1) / 2.0 - nm2 * nm2 / (_harmonic[N] - _harmonic[M])) / 2.0 / (2.0 * N - 1);
+	}
+	public double calc(int N)
+	{
+		return calc(calcM(N), N);
+	}
+	public static double[] solve(int[] queries)
+	{
+		int[] order = Enumerable.Range(0, queries.Length).ToArray<int>();
+		Array.Sort(order, (a, b) => queries[a].CompareTo(queries[b]));
+		Solution sln = new Solution(queries[order[order.Length - 1]]);
+		double[] ret = new double[order.Length];
+		foreach (int k in order)
+			ret[k] = sln.calc(queries[k]);
+		return ret;
+	}
+	public static void Main(string[] args)
+	{
+		int T = Convert.ToInt32(Console.ReadLine());
+		int[] queries = new int[T];
+		for (int i = 0; i < T; ++i)
+			queries[i] = Convert.ToInt32(Console.ReadLine());
+		var soln = solve(queries);
+		foreach (var v in soln)
+		{
+			Console.WriteLine("{0:F11}", v);
+		}
+	}
+}

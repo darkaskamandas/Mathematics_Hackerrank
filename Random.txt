@@ -1,0 +1,141 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+
+internal class Solution
+{
+	private static void Main(String[] args)
+	{
+		var line1 = Console.ReadLine();
+		var line2 = Console.ReadLine();
+
+		if (String.IsNullOrWhiteSpace(line1) || String.IsNullOrWhiteSpace(line2))
+		{
+			Console.WriteLine("Input Err");
+			return;
+		}
+
+		var line1Parts = line1.Split(new[] { ' ' });
+		var line2Parts = line2.Split(new[] { ' ' });
+
+		if (line1Parts.Length != 3)
+		{
+			Console.WriteLine("Input Err");
+			return;
+		}
+
+		var n = Convert.ToInt32(line1Parts[0]);
+		var a = Convert.ToInt32(line1Parts[1]);
+		var b = Convert.ToInt32(line1Parts[2]);
+
+		if (line2Parts.Length != n)
+		{
+			Console.WriteLine("Input Err");
+			return;
+		}
+		var d = line2Parts.Select(p => Convert.ToInt32(p)).ToArray();
+
+		var dd = d.Select(x => (double)x).ToArray();
+
+		var isConti = true;
+
+		for (var i = 0; i < a; i++)
+		{
+			var ddt = new double[n];
+			var dx = (1.0 - ((double)(n - 1) / (n * (n + 1) / 2 - n)));
+			var dy = (n * (n + 1) / 2 - n);
+
+			var sy = 0.0;
+			for (var y = 0; y < n; y++)
+				sy += dd[y] / dy;
+
+			for (var x = 0; x < n; x++)
+			{
+				ddt[x] = dd[x] * dx + sy - (dd[x] / dy);
+
+				//for (var y = 1; y <= n; y++)
+				//{
+				//	if (y == x)
+				//		continue;
+				//	ddt[x - 1] += dd[y - 1] / dy;
+				//}
+			}
+
+			var isDif = false;
+			for (var j = 0; j < n; j++)
+			{
+				if (Math.Abs(dd[j] - ddt[j]) > 0.000000001)
+				{
+					isDif = true;
+					break;
+				}
+			}
+
+			if (!isDif)
+			{
+				isConti = false;
+				break;
+			}
+
+			dd = ddt;
+		}
+
+		if (isConti)
+		{
+			for (var i = 0; i < b; i++)
+			{
+				var ddt = new double[n];
+				var dx = (n * (n + 1) / 2 - n);
+				for (var x = 1; x <= n; x++)
+				{
+					ddt[x - 1] = dd[x - 1] * (1.0 - ((double)(x * (n - x + 1) - 1) / dx));
+					for (var y = 1; y <= n; y++)
+					{
+						ddt[x - 1] += dd[y - 1] * FindMirrorSmart(x, y, n) / dx;
+					}
+				}
+
+				var isDif = false;
+				for (var j = 0; j < n; j++)
+				{
+					if (Math.Abs(dd[j] - ddt[j]) > 0.000000001)
+					{
+						isDif = true;
+						break;
+					}
+				}
+
+				if (!isDif)
+				{
+					isConti = false;
+					break;
+				}
+
+				dd = ddt;
+			}
+		}
+
+		Console.WriteLine("{0}", CountSmart(dd));
+
+		/* Enter your code here. Read input from STDIN. Print output to STDOUT. Your class should be named Solution */
+	}
+
+	private static int FindMirrorSmart(int x, int y, int n)
+	{
+		var m = Math.Min(Math.Min(x, y), Math.Min(n - x + 1, n - y + 1));
+		return x == y ? m - 1 : m;
+	}
+
+	private static double CountSmart(double[] d)
+	{
+		var sum = 0.0;
+		var n = d.Length;
+		for (var o = 1; o <= n; o++)
+		{
+			sum += d[o - 1] * (o * (n - o + 1) - 1) / (n * (n + 1) / 2 - n);
+		}
+		return sum;
+	}
+
+}

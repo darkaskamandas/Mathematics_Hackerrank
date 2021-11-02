@@ -1,0 +1,94 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime;
+using System.Text;
+
+namespace Sol
+{
+    public class Solution
+    {
+        static void Main(string[] args)
+        {
+            GCSettings.LatencyMode = GCLatencyMode.LowLatency;
+            int cases = ParseInt(Console.ReadLine());
+            for (int caseIndex = 0; caseIndex < cases; caseIndex++)
+            {
+                Node.EntireZombieCount = 0;
+                Node.ConnectionCount = 0;
+                string[] attributes = Console.ReadLine().Split(' ');
+                int nodeCount = ParseInt(attributes[0]);
+                int roadCount = ParseInt(attributes[1]);
+                int iterationCount = ParseInt(attributes[2]);
+                Node[] nodes = new Node[nodeCount];
+                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                {
+                    nodes[nodeIndex] = new Node();
+                }
+                for (int roadIndex = 0; roadIndex < roadCount; roadIndex++)
+                {
+                    string[] line = Console.ReadLine().Split(' ');
+                    int sourceIndex = ParseInt(line[0]);
+                    int targetIndex = ParseInt(line[1]);
+                    Node.Connect(nodes[sourceIndex], nodes[targetIndex]);
+                }
+                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                {
+                    nodes[nodeIndex].InitialZombies = ParseInt(Console.ReadLine());
+                }
+                float[] infinityZombies = nodes.Select(node => node.QuatifiedInfinityZombies).OrderByDescending(f => f).ToArray();
+                Console.WriteLine(
+                    (int)(infinityZombies[0] + 0.5) + " " +
+                    (int)(infinityZombies[1] + 0.5) + " " +
+                    (int)(infinityZombies[2] + 0.5) + " " +
+                    (int)(infinityZombies[3] + 0.5) + " " +
+                    (int)(infinityZombies[4] + 0.5) + " ");
+            }
+        }
+
+        public class Node
+        {
+            public static int ConnectionCount = 0;
+            public static int EntireZombieCount = 0;
+            public List<Node> Connections = new List<Node>();
+            private int _initialZombies = 0;
+            public int InitialZombies
+            {
+                get { return _initialZombies; }
+                set
+                {
+                    EntireZombieCount += (value - _initialZombies);
+                    _initialZombies = value;
+                }
+            }
+
+            public static void Connect(Node a, Node b)
+            {
+                a.Connections.Add(b);
+                b.Connections.Add(a);
+                ConnectionCount += 2;
+            }
+
+            public float QuatifiedInfinityZombies
+            {
+                get
+                {
+                    return Connections.Count == 0
+                               ? _initialZombies
+                               : Connections.Count*(float) EntireZombieCount/ConnectionCount;
+                }
+            }
+        }
+
+
+        public static int ParseInt(string line)
+        {
+            int sum = 0;
+            for (int index = line.Length - 1, multi = 1; index >= 0; index--, multi *= 10)
+            {
+                sum += (line[index] - 48) * multi;
+            }
+            return sum;
+        }
+    }
+}

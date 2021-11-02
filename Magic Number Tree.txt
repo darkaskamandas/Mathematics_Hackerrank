@@ -1,0 +1,60 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
+
+class Solution
+{
+	static long[] factorial;
+	static void Main() {
+		int n = int.Parse(Console.ReadLine ());
+		factorial = new long[n + 1];
+		for (int i = 0; i <= n; i++) {
+			factorial [i] = 1;
+			for (int j = 1; j <= n; j++) {
+				if (i != j) {
+					factorial [i] *= j;
+					factorial [i] %= 1000000009;
+				}
+			}
+		}
+
+		Node[] nodes = new Node[n];
+		for (int i = 0; i < n; i++) {
+			nodes [i] = new Node ();
+		}
+		for (int i = 0; i < n-1; i++) {
+			int[] nums = Console.ReadLine ().Split (' ').Select (int.Parse).ToArray ();
+			int u = nums [0] - 1;
+			int v = nums [1] - 1;
+			int c = nums [2];
+			nodes [u].Neighbors [nodes[v]] = c;
+			nodes [v].Neighbors [nodes[u]] = c;
+		}
+
+		long result = 0;
+		foreach (Node start in nodes) {
+			foreach (Node node in nodes)
+				node.Visited = false;
+			result += dfs(start, 0, 1);
+			result %= 1000000009;
+		}
+		Console.WriteLine (result);
+	}
+
+	static long dfs(Node n, long cost, int pathlength) {
+		cost %= 1000000009;
+		n.Visited = true;
+		long result = cost * factorial [pathlength];
+		foreach (KeyValuePair<Node, int> pair in n.Neighbors) {
+			if (pair.Key.Visited)
+				continue;
+			result += dfs (pair.Key, cost + pair.Value, pathlength + 1);
+		}
+		return result % 1000000009;
+	}
+
+	class Node {
+		public bool Visited;
+		public Dictionary<Node, int> Neighbors = new Dictionary<Node, int>();
+	}
+}

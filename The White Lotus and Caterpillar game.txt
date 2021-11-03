@@ -1,0 +1,56 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+ 
+class Solution{
+	static void Main(){
+		Sol mySol =new Sol();
+		mySol.Solve();
+	}
+}
+
+class Sol{
+	public void Solve(){
+		
+		long sum=0;
+		for(int i=0;i<M;i++){
+			for(int j=0;j<M;j++){
+				long d=i<j?j-i:i-j;
+				if(d<=N-1){
+					sum+=N-1;
+					continue;
+				}
+				if(i<j){
+					sum+=(M-1-i);
+					continue;
+				}else{
+					sum+=i;
+				}
+			}
+		}
+		double E=(double)sum/(double)(M*M);
+		Console.WriteLine(E);
+		
+		
+		
+		
+	}
+	int N;
+	int M;
+	public Sol(){
+		var d=ria();
+		N=d[0];M=d[1];
+	}
+
+
+
+
+	static String rs(){return Console.ReadLine();}
+	static int ri(){return int.Parse(Console.ReadLine());}
+	static long rl(){return long.Parse(Console.ReadLine());}
+	static double rd(){return double.Parse(Console.ReadLine());}
+	static String[] rsa(){return Console.ReadLine().Split(' ');}
+	static int[] ria(){return Array.ConvertAll(Console.ReadLine().Split(' '),e=>int.Parse(e));}
+	static long[] rla(){return Array.ConvertAll(Console.ReadLine().Split(' '),e=>long.Parse(e));}
+	static double[] rda(){return Array.ConvertAll(Console.ReadLine().Split(' '),e=>double.Parse(e));}
+}

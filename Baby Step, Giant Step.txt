@@ -1,0 +1,29 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+class Solution {
+    static void Main(String[] args) {
+        var sb = new StringBuilder();
+        int _tc_ = int.Parse(Console.ReadLine());
+        while (_tc_-- > 0) {
+            var tmp = Console.ReadLine().Split(' ');
+            long mx = long.Parse(tmp[0]);
+            long mn = long.Parse(tmp[1]);
+            long d = long.Parse(tmp[2]);
+
+            if (mx < mn) { var t = mx; mx = mn; mn = t; }
+
+            long ans = d / mx;
+            if (d != mx * ans) {
+                if (ans == 0) {
+                    if (d == mn) ans = 1; else ans = 2;
+                } else {
+                    ans++;
+                }
+            }
+            sb.Append(ans).Append("\n");
+        }
+        --sb.Length;
+        Console.WriteLine(sb.ToString());
+    }
+}

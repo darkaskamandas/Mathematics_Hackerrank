@@ -1,0 +1,64 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+class Solution {
+    static double pow;
+    static int[] w;
+    static int M;
+    static long N;
+    static double Comb(int pos, int total,int limit,int used){
+        if(used>N)
+            return 0;
+        if(total<0)
+            return 0;
+        int i;
+        if(pos == M){
+            if(total !=0)
+                return 0;
+            int r=0,l=0,mx=0;
+            double tmp=w[0];
+            for(i=0;i<M;i++)
+                if(w[i]!=0){
+                    if(w[i]==l)
+                        mx++;
+                    else{
+                        l=w[i];
+                        mx=0;
+                    }
+                    tmp*=N-r;
+                    tmp/=mx+1;
+                    r++;
+                }
+            return tmp/pow;
+        }
+        else{
+            if(total==0){
+                w[pos]=0;
+                return Comb(pos+1,total,0,used);
+            }
+            double sum=0;
+            for(i=1;i<=total&&i<=limit;i++){
+                w[pos]=i;
+                sum += Comb(pos+1,total-i,i,used+1);
+            }
+            return sum;
+        }
+    }
+    static void Main(String[] args) {
+        int i,t = Convert.ToInt32(Console.ReadLine());
+        String[] inp;
+        for(;t>0;t--){
+            inp = Console.ReadLine().Split(new char[]{' '});
+            M = Convert.ToInt32(inp[0]);
+            N = Convert.ToInt32(inp[1]);
+            w = new int[M];
+            pow = 1;
+            for(i=0;i<M;i++){
+                pow *= N+i;
+                pow /= i+1;
+            }
+            Console.WriteLine(Comb(0,M,M,0));
+        }
+        /* Enter your code here. Read input from STDIN. Print output to STDOUT. Your class should be named Solution */
+    }
+}
